@@ -1,0 +1,141 @@
+# Gatsby Guardians - AI Coding Assistant Rules
+
+## Phaser 3 Guidelines
+
+- Always use Phaser 3.80+ syntax
+- Avoid deprecated APIs (WebGL 1.0, old input methods)
+- Use `Phaser.Physics.Arcade` for physics (NOT Matter.js unless specified)
+- Follow the Preload-Create-Update lifecycle pattern
+- Never use `this.scene.scene` - use `this.scene` directly
+
+## TypeScript Best Practices
+
+- Use strict mode (already configured in tsconfig.json)
+- Prefer interfaces for config objects
+- Use type imports for Phaser types: `import type { GameObjects } from 'phaser'`
+- Utilize auto-generated asset types from `src/types/assets.d.ts`
+
+## Rendering Rules
+
+- **ALWAYS round coordinates to integers before rendering**
+  ```typescript
+  this.x = Math.round(this.x);
+  this.y = Math.round(this.y);
+  ```
+- Never use fractional pixel positions for sprites
+- Ensure `pixelArt: true` is set in game config
+- Use `roundPixels: true` in render config
+
+## Input Handling
+
+- **Never use direct input checks** - always use InputMapper
+  ```typescript
+  // Bad:
+  if (this.input.keyboard.isDown('SPACE')) { ... }
+
+  // Good:
+  if (this.inputMapper.isActionJustPressed(GameAction.JUMP)) { ... }
+  ```
+- InputMapper handles keyboard, gamepad, and touch simultaneously
+- Update InputMapper every frame: `this.inputMapper.update()`
+
+## Object Pooling
+
+- **Always use object pooling** for frequently created/destroyed objects
+- Use `ObjectPool` class for bullets, particles, enemies
+- Never `new Sprite()` in update loop - get from pool instead
+  ```typescript
+  const bullet = this.bulletPool.get();
+  // Use bullet...
+  this.bulletPool.release(bullet); // When done
+  ```
+
+## Asset Loading
+
+- Use type-safe asset keys from `assets.d.ts`
+- Load assets via manifest bundles (not individual files)
+- Never hardcode asset paths - use manifest.json
+- Audio should have dual format (WebM + MP3) for browser compatibility
+
+## Game Feel Implementation
+
+- Implement coyote time for jumps (6 frames default)
+- Use input buffering for better responsiveness (5 frames default)
+- Round velocities if they become very small (< 1) to prevent float drift
+- Frame-perfect collision detection with Arcade Physics
+
+## Scene Management
+
+- Store shared systems in `this.registry` (InputMapper, AudioManager, AdManager)
+- Clean up resources in scene shutdown
+- Use scene transitions with camera fades for polish
+- Never create multiple instances of singleton systems
+
+## Audio
+
+- Use AudioManager, never Howler.js directly
+- Always unlock audio context on mobile (handled by AudioManager)
+- Use audio sprites for SFX (single file with multiple sounds)
+- Loop music tracks, one-shot SFX
+
+## Mobile Considerations
+
+- Show virtual joystick only on touch devices: `if ('ontouchstart' in window)`
+- Prevent default on touch events to avoid page scrolling
+- Use `100dvh` instead of `100vh` for viewport height
+- Test integer scaling on various resolutions
+
+## Code Organization
+
+- **Scenes**: `/src/scenes/` - Phaser scene classes
+- **Entities**: `/src/entities/` - Game object classes (Player, Enemy, etc.)
+- **Systems**: `/src/systems/` - Core systems (Input, Audio, Ads)
+- **Utils**: `/src/utils/` - Helper classes (ScaleManager, ObjectPool)
+- **Types**: `/src/types/` - TypeScript definitions
+
+## Performance
+
+- Disable physics debug mode in production (`arcade.debug: false`)
+- Use static physics bodies for platforms (non-moving objects)
+- Limit particle counts
+- Use texture atlases (never individual image loads)
+- Code-split Phaser into separate chunk
+
+## Common Mistakes to Avoid
+
+- ❌ Using `<form>` tags in game UI (use Phaser.GameObjects.Text instead)
+- ❌ Fractional coordinates (causes blurry sprites)
+- ❌ Creating objects every frame (use pools)
+- ❌ Forgetting to round coordinates
+- ❌ Using Matter.js when Arcade Physics is sufficient
+- ❌ Hardcoding asset paths
+- ❌ Not updating InputMapper every frame
+
+## Asset Pipeline
+
+- Raw assets go in `/assets/raw/`
+- Processed assets output to `/assets/dist/`
+- Run `npm run process:assets` after adding new assets
+- Types auto-regenerate from manifest.json
+
+## Build Scripts
+
+- `npm run dev` - Start dev server with asset watching
+- `npm run build` - Production build
+- `npm run process:assets` - Process raw assets
+- `npm run watch:assets` - Watch assets for changes
+
+## Debugging
+
+- Game instance available at `window.game`
+- ScaleManager at `window.scaleManager`
+- Use Phaser's built-in debug rendering for physics bodies
+- Console log ad events in mock mode
+
+## Best Practices
+
+- Keep update loops clean and performant
+- Separate game logic from rendering
+- Use constants from `/src/game/constants.ts`
+- Comment complex physics calculations
+- Use meaningful variable names (no single letters except loop counters)
