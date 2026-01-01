@@ -46,18 +46,9 @@ export class GamePlayScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, BASE_WIDTH, BASE_HEIGHT);
     this.cameras.main.startFollow(this.player, false, 0.1, 0.1);
 
-    // Add instructions
-    const instructionsText = this.add.text(10, 10, 'Arrow Keys/WASD/Space to Move & Jump', {
-      fontFamily: 'Arial',
-      fontSize: '12px',
-      color: '#000000',
-      backgroundColor: '#ffffff',
-      padding: { x: 4, y: 4 },
-    });
-    instructionsText.setScrollFactor(0);
-
     // Add fullscreen button
     this.fullscreenManager = new FullscreenManager(this);
+    void this.fullscreenManager; // Keep reference to prevent garbage collection
 
     // Add scene switcher for development
     new SceneSwitcher(this, ENABLE_SCENE_SWITCHER);

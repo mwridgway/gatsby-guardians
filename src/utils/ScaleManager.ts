@@ -36,11 +36,13 @@ export class ScaleManager {
     // Resize the game
     this.game.scale.resize(BASE_WIDTH, BASE_HEIGHT);
 
-    // Update canvas size
+    // Update canvas size and center it
     const canvas = this.game.canvas;
     if (canvas) {
       canvas.style.width = `${displayWidth}px`;
       canvas.style.height = `${displayHeight}px`;
+      canvas.style.display = 'block';
+      canvas.style.margin = '0 auto';
     }
   }
 

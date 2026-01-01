@@ -53,18 +53,9 @@ export class SideScrollerScene extends Phaser.Scene {
     // Set world bounds for physics
     this.physics.world.setBounds(0, 0, this.LEVEL_WIDTH, BASE_HEIGHT);
 
-    // Add instructions
-    const instructionsText = this.add.text(10, 10, 'Side-Scroller Level - Explore!', {
-      fontFamily: 'Arial',
-      fontSize: '12px',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 4, y: 4 },
-    });
-    instructionsText.setScrollFactor(0);
-
     // Add fullscreen button
     this.fullscreenManager = new FullscreenManager(this);
+    void this.fullscreenManager; // Keep reference to prevent garbage collection
 
     // Add scene switcher for development
     new SceneSwitcher(this, ENABLE_SCENE_SWITCHER);

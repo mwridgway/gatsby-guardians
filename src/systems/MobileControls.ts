@@ -8,12 +8,16 @@ export class MobileControls {
   private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container;
   
-  // Joystick elements
-  private joystickBase!: Phaser.GameObjects.Circle;
-  private joystickThumb!: Phaser.GameObjects.Circle;
-  private joystickPointer: Phaser.Input.Pointer | null = null;
-  private joystickStartX: number = 0;
-  private joystickStartY: number = 0;
+  // D-pad elements (all stacked at same position)
+  private dpadCenter!: Phaser.GameObjects.Sprite;
+  private dpadUp!: Phaser.GameObjects.Sprite;
+  private dpadDown!: Phaser.GameObjects.Sprite;
+  private dpadLeft!: Phaser.GameObjects.Sprite;
+  private dpadRight!: Phaser.GameObjects.Sprite;
+  private dpadTouchArea!: Phaser.GameObjects.Arc;
+  private dpadPointer: Phaser.Input.Pointer | null = null;
+  private dpadBaseX: number = 0;
+  private dpadBaseY: number = 0;
   
   // Button elements
   private jumpButton!: Phaser.GameObjects.Container;
@@ -32,9 +36,7 @@ export class MobileControls {
   private prevAttackPressed: boolean = false;
   
   private readonly JOYSTICK_SIZE = 80;
-  private readonly JOYSTICK_THUMB_SIZE = 35;
   private readonly BUTTON_SIZE = 50;
-  private readonly DEADZONE = 0.2;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -61,23 +63,128 @@ export class MobileControls {
   private createJoystick(): void {
     const x = this.JOYSTICK_SIZE + 20;
     const y = BASE_HEIGHT - this.JOYSTICK_SIZE - 20;
-    
-    // Base (outer circle)
-    this.joystickBase = this.scene.add.circle(x, y, this.JOYSTICK_SIZE / 2, 0x000000, 0.3);
-    this.joystickBase.setStrokeStyle(2, 0xffffff, 0.5);
-    this.container.add(this.joystickBase);
-    
-    // Thumb (inner circle)
-    this.joystickThumb = this.scene.add.circle(x, y, this.JOYSTICK_THUMB_SIZE / 2, 0xffffff, 0.6);
-    this.joystickThumb.setStrokeStyle(2, 0x00ff00, 0.8);
-    this.container.add(this.joystickThumb);
-    
-    // Make joystick interactive
-    this.joystickBase.setInteractive();
-    
-    this.scene.input.on('pointerdown', this.onJoystickDown, this);
-    this.scene.input.on('pointermove', this.onJoystickMove, this);
-    this.scene.input.on('pointerup', this.onJoystickUp, this);
+
+    this.dpadBaseX = x;
+    this.dpadBaseY = y;
+
+    // D-pad sprite frames from row 14, columns 1-5
+    // Sequence: middle, up, right, down, left
+    const dpadFrames = {
+      center: 442,  // Row 14, Col 1 - middle
+      up: 443,      // Row 14, Col 2 - up
+      right: 444,   // Row 14, Col 3 - right
+      down: 445,    // Row 14, Col 4 - down
+      left: 446,    // Row 14, Col 5 - left
+    };
+
+    const buttonScale = 3.5;
+
+    // All sprites stacked at the SAME position
+    // Create all directional sprites (hidden initially)
+    this.dpadUp = this.scene.add.sprite(x, y, 'input-prompts', dpadFrames.up);
+    this.dpadUp.setScale(buttonScale);
+    this.dpadUp.setVisible(false);
+    this.container.add(this.dpadUp);
+
+    this.dpadDown = this.scene.add.sprite(x, y, 'input-prompts', dpadFrames.down);
+    this.dpadDown.setScale(buttonScale);
+    this.dpadDown.setVisible(false);
+    this.container.add(this.dpadDown);
+
+    this.dpadLeft = this.scene.add.sprite(x, y, 'input-prompts', dpadFrames.left);
+    this.dpadLeft.setScale(buttonScale);
+    this.dpadLeft.setVisible(false);
+    this.container.add(this.dpadLeft);
+
+    this.dpadRight = this.scene.add.sprite(x, y, 'input-prompts', dpadFrames.right);
+    this.dpadRight.setScale(buttonScale);
+    this.dpadRight.setVisible(false);
+    this.container.add(this.dpadRight);
+
+    // Center sprite (visible when not pressing any direction)
+    this.dpadCenter = this.scene.add.sprite(x, y, 'input-prompts', dpadFrames.center);
+    this.dpadCenter.setScale(buttonScale);
+    this.dpadCenter.setVisible(true);
+    this.container.add(this.dpadCenter);
+
+    // Create invisible touch area
+    this.dpadTouchArea = this.scene.add.circle(x, y, this.JOYSTICK_SIZE / 2, 0x000000, 0);
+    this.dpadTouchArea.setInteractive();
+    this.container.add(this.dpadTouchArea);
+
+    // Set up touch events
+    this.scene.input.on('pointerdown', this.onDpadDown, this);
+    this.scene.input.on('pointermove', this.onDpadMove, this);
+    this.scene.input.on('pointerup', this.onDpadUp, this);
+  }
+
+  private onDpadDown(pointer: Phaser.Input.Pointer): void {
+    const distance = Phaser.Math.Distance.Between(pointer.x, pointer.y, this.dpadBaseX, this.dpadBaseY);
+    if (distance <= this.JOYSTICK_SIZE / 2) {
+      this.dpadPointer = pointer;
+      this.updateDpadVisual(pointer);
+    }
+  }
+
+  private onDpadMove(pointer: Phaser.Input.Pointer): void {
+    if (this.dpadPointer !== pointer) return;
+    this.updateDpadVisual(pointer);
+  }
+
+  private onDpadUp(pointer: Phaser.Input.Pointer): void {
+    if (this.dpadPointer !== pointer) return;
+
+    this.dpadPointer = null;
+    this._moveX = 0;
+    this._moveY = 0;
+
+    // Show center sprite, hide all directional sprites
+    this.dpadCenter.setVisible(true);
+    this.dpadUp.setVisible(false);
+    this.dpadDown.setVisible(false);
+    this.dpadLeft.setVisible(false);
+    this.dpadRight.setVisible(false);
+  }
+
+  private updateDpadVisual(pointer: Phaser.Input.Pointer): void {
+    const dx = pointer.x - this.dpadBaseX;
+    const dy = pointer.y - this.dpadBaseY;
+
+    // Determine primary direction
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    // Hide all sprites first
+    this.dpadCenter.setVisible(false);
+    this.dpadUp.setVisible(false);
+    this.dpadDown.setVisible(false);
+    this.dpadLeft.setVisible(false);
+    this.dpadRight.setVisible(false);
+
+    // Show appropriate sprite and set movement
+    if (absX > absY) {
+      // Horizontal movement
+      if (dx > 0) {
+        this.dpadRight.setVisible(true);
+        this._moveX = 1;
+        this._moveY = 0;
+      } else {
+        this.dpadLeft.setVisible(true);
+        this._moveX = -1;
+        this._moveY = 0;
+      }
+    } else {
+      // Vertical movement
+      if (dy > 0) {
+        this.dpadDown.setVisible(true);
+        this._moveX = 0;
+        this._moveY = 1;
+      } else {
+        this.dpadUp.setVisible(true);
+        this._moveX = 0;
+        this._moveY = -1;
+      }
+    }
   }
 
   private createButtons(): void {
@@ -102,107 +209,63 @@ export class MobileControls {
     this.container.add([this.jumpButton, this.attackButton]);
   }
 
-  private createButton(x: number, y: number, label: string, color: number): Phaser.GameObjects.Container {
+  private createButton(x: number, y: number, label: string, _color: number): Phaser.GameObjects.Container {
     const container = this.scene.add.container(x, y);
-    
-    // Button circle
-    const circle = this.scene.add.circle(0, 0, this.BUTTON_SIZE / 2, color, 0.4);
-    circle.setStrokeStyle(2, 0xffffff, 0.6);
-    circle.setInteractive();
-    
-    // Button label
-    const text = this.scene.add.text(0, 0, label, {
-      fontFamily: 'Arial',
-      fontSize: '24px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-    });
-    text.setOrigin(0.5);
-    
-    container.add([circle, text]);
-    
-    // Set up button events
-    circle.on('pointerdown', () => {
-      circle.setAlpha(0.8);
+
+    // Use gamepad button frames from the sprite sheet
+    // A is row 1 column 5, B is row 1 column 6
+    // Row 1 (0-indexed row 0) = 0 * 34 = 0
+    // Column 5 (0-indexed 4) = 0 + 4 = 4
+    // Column 6 (0-indexed 5) = 0 + 5 = 5
+    const buttonFrames = {
+      A: 4,  // A button (row 1, col 5)
+      B: 5,  // B button (row 1, col 6)
+    };
+
+    const frame = label === 'A' ? buttonFrames.A : buttonFrames.B;
+
+    // Create button sprite - clean, no text overlay
+    const button = this.scene.add.sprite(0, 0, 'input-prompts', frame);
+    button.setScale(4);
+    button.setAlpha(0.85);
+    button.setInteractive({ useHandCursor: true });
+
+    container.add(button);
+
+    // Set up button events with scale feedback
+    button.on('pointerdown', () => {
+      button.setScale(3.7);
+      button.setAlpha(1);
       if (label === 'A') {
         this._jumpPressed = true;
       } else if (label === 'B') {
         this._attackPressed = true;
       }
     });
-    
-    circle.on('pointerup', () => {
-      circle.setAlpha(0.4);
+
+    button.on('pointerup', () => {
+      button.setScale(4);
+      button.setAlpha(0.85);
       if (label === 'A') {
         this._jumpPressed = false;
       } else if (label === 'B') {
         this._attackPressed = false;
       }
     });
-    
-    circle.on('pointerout', () => {
-      circle.setAlpha(0.4);
+
+    button.on('pointerout', () => {
+      button.setScale(4);
+      button.setAlpha(0.85);
       if (label === 'A') {
         this._jumpPressed = false;
       } else if (label === 'B') {
         this._attackPressed = false;
       }
     });
-    
+
     return container;
   }
 
-  private onJoystickDown(pointer: Phaser.Input.Pointer): void {
-    const baseX = this.joystickBase.x;
-    const baseY = this.joystickBase.y;
-    const distance = Phaser.Math.Distance.Between(pointer.x, pointer.y, baseX, baseY);
-    
-    if (distance <= this.JOYSTICK_SIZE / 2) {
-      this.joystickPointer = pointer;
-      this.joystickStartX = baseX;
-      this.joystickStartY = baseY;
-    }
-  }
-
-  private onJoystickMove(pointer: Phaser.Input.Pointer): void {
-    if (this.joystickPointer !== pointer) return;
-    
-    const baseX = this.joystickStartX;
-    const baseY = this.joystickStartY;
-    
-    const dx = pointer.x - baseX;
-    const dy = pointer.y - baseY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const maxDistance = this.JOYSTICK_SIZE / 2;
-    
-    if (distance > maxDistance) {
-      // Clamp to max distance
-      const angle = Math.atan2(dy, dx);
-      this.joystickThumb.x = baseX + Math.cos(angle) * maxDistance;
-      this.joystickThumb.y = baseY + Math.sin(angle) * maxDistance;
-    } else {
-      this.joystickThumb.x = pointer.x;
-      this.joystickThumb.y = pointer.y;
-    }
-    
-    // Calculate normalized input
-    this._moveX = dx / maxDistance;
-    this._moveY = dy / maxDistance;
-    
-    // Apply deadzone
-    if (Math.abs(this._moveX) < this.DEADZONE) this._moveX = 0;
-    if (Math.abs(this._moveY) < this.DEADZONE) this._moveY = 0;
-  }
-
-  private onJoystickUp(pointer: Phaser.Input.Pointer): void {
-    if (this.joystickPointer !== pointer) return;
-    
-    this.joystickPointer = null;
-    this.joystickThumb.x = this.joystickStartX;
-    this.joystickThumb.y = this.joystickStartY;
-    this._moveX = 0;
-    this._moveY = 0;
-  }
 
   public update(): void {
     // Update "just pressed" state
@@ -226,9 +289,9 @@ export class MobileControls {
   }
 
   public destroy(): void {
-    this.scene.input.off('pointerdown', this.onJoystickDown, this);
-    this.scene.input.off('pointermove', this.onJoystickMove, this);
-    this.scene.input.off('pointerup', this.onJoystickUp, this);
+    this.scene.input.off('pointerdown', this.onDpadDown, this);
+    this.scene.input.off('pointermove', this.onDpadMove, this);
+    this.scene.input.off('pointerup', this.onDpadUp, this);
     this.container.destroy();
   }
 }

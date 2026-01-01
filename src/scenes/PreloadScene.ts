@@ -26,6 +26,15 @@ export class PreloadScene extends Phaser.Scene {
     // For now, we'll skip manifest loading and just proceed
     // this.load.json('manifest', 'assets/dist/manifest.json');
 
+    // Load UI input prompts spritesheet
+    // Tile size: 16x16, spacing: 1px between tiles
+    this.load.spritesheet('input-prompts', 'assets/raw/graphics/ui/input-prompts.png', {
+      frameWidth: 16,
+      frameHeight: 16,
+      spacing: 1,
+      margin: 0,
+    });
+
     // Load placeholder assets (will be added after asset pipeline is set up)
     // For now, just create some simple graphics
   }

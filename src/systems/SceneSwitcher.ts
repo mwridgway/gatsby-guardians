@@ -12,7 +12,8 @@ export class SceneSwitcher {
   private scene: Phaser.Scene;
   private enabled: boolean = false;
   private indicatorText?: Phaser.GameObjects.Text;
-  
+  private buttonContainer?: Phaser.GameObjects.Container;
+
   private sceneMap: Map<number, string> = new Map([
     [1, 'GamePlayScene'],
     [2, 'SideScrollerScene'],
@@ -21,10 +22,10 @@ export class SceneSwitcher {
   constructor(scene: Phaser.Scene, enabled: boolean = true) {
     this.scene = scene;
     this.enabled = enabled;
-    
+
     if (this.enabled) {
       this.setupKeyboardShortcuts();
-      this.createIndicator();
+      this.createButtons();
     }
   }
 
@@ -60,38 +61,73 @@ export class SceneSwitcher {
     }
   }
 
-  private createIndicator(): void {
-    const shortcuts = [
-      '--- DEV MODE ---',
-      '1: Static Platformer',
-      '2: Side-Scroller',
-      'ESC: Main Menu',
-      '~: Toggle Help',
-    ];
 
-    this.indicatorText = this.scene.add.text(
-      this.scene.cameras.main.width - 10,
-      10,
-      shortcuts.join('\n'),
-      {
-        fontFamily: 'monospace',
-        fontSize: '10px',
-        color: '#00ff00',
-        backgroundColor: '#000000',
-        padding: { x: 6, y: 4 },
-        align: 'left',
-      }
-    );
-    
-    this.indicatorText.setOrigin(1, 0);
-    this.indicatorText.setScrollFactor(0);
-    this.indicatorText.setDepth(10000);
-    this.indicatorText.setAlpha(0.7);
+  private createButtons(): void {
+    this.buttonContainer = this.scene.add.container(0, 0);
+    this.buttonContainer.setScrollFactor(0);
+    this.buttonContainer.setDepth(9997);
+
+    const buttonScale = 2.5;
+    const buttonSize = 16 * buttonScale;
+    const padding = 10;
+    const buttonSpacing = buttonSize + 8;
+
+    // Position at top right
+    const startX = this.scene.cameras.main.width - buttonSize - padding;
+    const startY = padding;
+
+    // Frame calculations
+    const keyFrames = {
+      one: 51,      // '1' key (row 2, col 18)
+      two: 52,      // '2' key (row 2, col 19)
+      esc: 17,      // ESC key (row 1, col 18)
+    };
+
+    // Create scene switch buttons at top right (right to left)
+    // Menu button: MainMenuScene (rightmost)
+    this.createSceneButton(startX, startY, keyFrames.esc, 'MainMenuScene', 'ESC: Menu');
+
+    // Button 2: SideScrollerScene
+    this.createSceneButton(startX - buttonSpacing, startY, keyFrames.two, 'SideScrollerScene', '2: Side-Scroller');
+
+    // Button 1: GamePlayScene (leftmost)
+    this.createSceneButton(startX - buttonSpacing * 2, startY, keyFrames.one, 'GamePlayScene', '1: Platformer');
+  }
+
+  private createSceneButton(x: number, y: number, frame: number, sceneName: string, _label: string): void {
+    const button = this.scene.add.sprite(x, y, 'input-prompts', frame);
+    button.setScale(2.5);
+    button.setAlpha(0.75);
+    button.setOrigin(0, 0);
+    button.setInteractive({ useHandCursor: true });
+
+    // Hover effect
+    button.on('pointerover', () => {
+      button.setAlpha(1);
+      button.setScale(2.7);
+    });
+
+    button.on('pointerout', () => {
+      button.setAlpha(0.75);
+      button.setScale(2.5);
+    });
+
+    // Click to switch scene
+    button.on('pointerdown', () => {
+      button.setScale(2.3);
+      this.switchToScene(sceneName);
+    });
+
+    button.on('pointerup', () => {
+      button.setScale(2.5);
+    });
+
+    this.buttonContainer?.add(button);
   }
 
   private toggleIndicator(): void {
-    if (this.indicatorText) {
-      this.indicatorText.setVisible(!this.indicatorText.visible);
+    if (this.buttonContainer) {
+      this.buttonContainer.setVisible(!this.buttonContainer.visible);
     }
   }
 
@@ -150,6 +186,9 @@ export class SceneSwitcher {
   destroy(): void {
     if (this.indicatorText) {
       this.indicatorText.destroy();
+    }
+    if (this.buttonContainer) {
+      this.buttonContainer.destroy();
     }
   }
 }

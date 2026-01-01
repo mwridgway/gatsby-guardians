@@ -15,53 +15,48 @@ export class FullscreenManager {
   }
 
   private createFullscreenButton(): void {
-    const buttonSize = 40;
+    const buttonScale = 2.0;
     const padding = 10;
-    
+
     // Position in top-left corner
-    const x = padding + buttonSize / 2;
-    const y = padding + buttonSize / 2;
-    
-    this.button = this.scene.add.container(x, y);
-    this.button.setScrollFactor(0);
-    this.button.setDepth(9998);
-    
-    // Background circle
-    const bg = this.scene.add.circle(0, 0, buttonSize / 2, 0x000000, 0.5);
-    bg.setStrokeStyle(2, 0xffffff, 0.6);
-    bg.setInteractive({ useHandCursor: true });
-    
-    // Icon (maximize/minimize)
-    const icon = this.scene.add.text(0, 0, '⛶', {
-      fontFamily: 'Arial',
-      fontSize: '20px',
-      color: '#ffffff',
+    const x = padding;
+    const y = padding;
+
+    // Fullscreen icon from sprite sheet
+    // Row 4, Col 32: (4-1)*34 + (32-1) = 133
+    const fullscreenFrame = 133;
+
+    const button = this.scene.add.sprite(x, y, 'input-prompts', fullscreenFrame);
+    button.setScale(buttonScale);
+    button.setAlpha(0.75);
+    button.setOrigin(0, 0);
+    button.setScrollFactor(0);
+    button.setDepth(9998);
+    button.setInteractive({ useHandCursor: true });
+
+    // Hover effect
+    button.on('pointerover', () => {
+      button.setAlpha(1);
+      button.setScale(2.2);
     });
-    icon.setOrigin(0.5);
-    
-    this.button.add([bg, icon]);
-    
+
+    button.on('pointerout', () => {
+      button.setAlpha(0.75);
+      button.setScale(2.0);
+    });
+
     // Click handler
-    bg.on('pointerdown', () => {
-      bg.setAlpha(0.8);
+    button.on('pointerdown', () => {
+      button.setScale(1.8);
       this.toggleFullscreen();
     });
-    
-    bg.on('pointerup', () => {
-      bg.setAlpha(1);
+
+    button.on('pointerup', () => {
+      button.setScale(2.0);
     });
-    
-    // Hover effect on desktop
-    bg.on('pointerover', () => {
-      bg.setStrokeStyle(2, 0x00ff00, 0.8);
-    });
-    
-    bg.on('pointerout', () => {
-      bg.setStrokeStyle(2, 0xffffff, 0.6);
-    });
-    
-    // Update icon based on fullscreen state
-    this.updateButtonIcon();
+
+    this.button = this.scene.add.container(0, 0);
+    this.button.add(button);
   }
 
   private setupFullscreenListeners(): void {
@@ -85,14 +80,7 @@ export class FullscreenManager {
   }
 
   private updateButtonIcon(): void {
-    if (!this.button) return;
-    
-    const icon = this.button.getAt(1) as Phaser.GameObjects.Text;
-    icon.setText(this.isFullscreen ? '⛶' : '⛶');
-    
-    // Change color based on state
-    const bg = this.button.getAt(0) as Phaser.GameObjects.Circle;
-    bg.setFillStyle(this.isFullscreen ? 0x00ff00 : 0x000000, 0.5);
+    // Icon doesn't change - using sprite from sheet
   }
 
   public toggleFullscreen(): void {
@@ -117,8 +105,8 @@ export class FullscreenManager {
     }
     
     // Lock orientation to landscape on mobile
-    if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch(() => {
+    if (screen.orientation && 'lock' in screen.orientation) {
+      (screen.orientation as any).lock('landscape').catch(() => {
         console.log('Orientation lock not supported');
       });
     }
