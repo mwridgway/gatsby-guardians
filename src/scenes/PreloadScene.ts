@@ -28,7 +28,7 @@ export class PreloadScene extends Phaser.Scene {
 
     // Load UI input prompts spritesheet
     // Tile size: 16x16, spacing: 1px between tiles
-    this.load.spritesheet('input-prompts', 'assets/raw/graphics/ui/input-prompts.png', {
+    this.load.spritesheet('input-prompts', 'assets/input-prompts.png', {
       frameWidth: 16,
       frameHeight: 16,
       spacing: 1,
