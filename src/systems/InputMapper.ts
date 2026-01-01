@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { MobileControls } from './MobileControls';
 
 /**
  * Game actions enum for input abstraction
@@ -21,6 +22,7 @@ export class InputMapper {
   private previousActions: Set<GameAction>;
   private currentActions: Set<GameAction>;
   private virtualJoystick: any; // RexVirtualJoystick
+  private mobileControls?: MobileControls;
   private gamepadIndex: number = 0;
   private keysPressed: Set<string> = new Set();
 
@@ -59,8 +61,8 @@ export class InputMapper {
       return;
     }
 
-    // Virtual joystick will be initialized by scenes when needed
-    // This is a placeholder for the implementation
+    // Create mobile controls
+    this.mobileControls = new MobileControls(this.scene);
   }
 
   /**
@@ -87,6 +89,11 @@ export class InputMapper {
     this.previousActions = new Set(this.currentActions);
     this.currentActions.clear();
 
+    // Update mobile controls
+    if (this.mobileControls) {
+      this.mobileControls.update();
+    }
+
     // Check keyboard input
     this.updateKeyboardInput();
 
@@ -95,6 +102,9 @@ export class InputMapper {
 
     // Check virtual joystick (lowest priority)
     this.updateVirtualJoystickInput();
+    
+    // Check mobile controls
+    this.updateMobileControlsInput();
   }
 
   private updateKeyboardInput(): void {
@@ -163,6 +173,28 @@ export class InputMapper {
     // Virtual joystick up for jump
     if (this.virtualJoystick.up) {
       this.currentActions.add(GameAction.JUMP);
+    }
+  }
+
+  private updateMobileControlsInput(): void {
+    if (!this.mobileControls) return;
+
+    // Movement from joystick
+    if (this.mobileControls.moveX < -0.3) {
+      this.currentActions.add(GameAction.MOVE_LEFT);
+    }
+    if (this.mobileControls.moveX > 0.3) {
+      this.currentActions.add(GameAction.MOVE_RIGHT);
+    }
+
+    // Jump button
+    if (this.mobileControls.jumpPressed) {
+      this.currentActions.add(GameAction.JUMP);
+    }
+
+    // Attack button
+    if (this.mobileControls.attackPressed) {
+      this.currentActions.add(GameAction.ATTACK);
     }
   }
 

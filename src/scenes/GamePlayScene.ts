@@ -4,6 +4,7 @@ import { InputMapper } from '../systems/InputMapper';
 import { AdManager } from '../systems/AdManager';
 import { Player } from '../entities/Player';
 import { SceneSwitcher } from '../systems/SceneSwitcher';
+import { FullscreenManager } from '../systems/FullscreenManager';
 
 /**
  * GamePlayScene - Main gameplay scene
@@ -13,6 +14,7 @@ export class GamePlayScene extends Phaser.Scene {
   private adManager!: AdManager;
   private player!: Player;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
+  private fullscreenManager!: FullscreenManager;
 
   constructor() {
     super({ key: 'GamePlayScene' });
@@ -53,6 +55,9 @@ export class GamePlayScene extends Phaser.Scene {
       padding: { x: 4, y: 4 },
     });
     instructionsText.setScrollFactor(0);
+
+    // Add fullscreen button
+    this.fullscreenManager = new FullscreenManager(this);
 
     // Add scene switcher for development
     new SceneSwitcher(this, ENABLE_SCENE_SWITCHER);
