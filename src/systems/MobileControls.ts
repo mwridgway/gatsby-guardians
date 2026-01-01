@@ -77,7 +77,7 @@ export class MobileControls {
       left: 446,    // Row 14, Col 5 - left
     };
 
-    const buttonScale = 3.5;
+    const buttonScale = 2.5;
 
     // All sprites stacked at the SAME position
     // Create all directional sprites (hidden initially)
@@ -226,7 +226,7 @@ export class MobileControls {
 
     // Create button sprite - clean, no text overlay
     const button = this.scene.add.sprite(0, 0, 'input-prompts', frame);
-    button.setScale(4);
+    button.setScale(2.5);
     button.setAlpha(0.85);
     button.setInteractive({ useHandCursor: true });
 
@@ -234,7 +234,7 @@ export class MobileControls {
 
     // Set up button events with scale feedback
     button.on('pointerdown', () => {
-      button.setScale(3.7);
+      button.setScale(2.3);
       button.setAlpha(1);
       if (label === 'A') {
         this._jumpPressed = true;
@@ -244,7 +244,7 @@ export class MobileControls {
     });
 
     button.on('pointerup', () => {
-      button.setScale(4);
+      button.setScale(2.5);
       button.setAlpha(0.85);
       if (label === 'A') {
         this._jumpPressed = false;
@@ -254,7 +254,7 @@ export class MobileControls {
     });
 
     button.on('pointerout', () => {
-      button.setScale(4);
+      button.setScale(2.5);
       button.setAlpha(0.85);
       if (label === 'A') {
         this._jumpPressed = false;

@@ -15,7 +15,7 @@ export class FullscreenManager {
   }
 
   private createFullscreenButton(): void {
-    const buttonScale = 2.0;
+    const buttonScale = 2.5;
     const padding = 10;
 
     // Position in top-left corner
@@ -37,22 +37,22 @@ export class FullscreenManager {
     // Hover effect
     button.on('pointerover', () => {
       button.setAlpha(1);
-      button.setScale(2.2);
+      button.setScale(2.7);
     });
 
     button.on('pointerout', () => {
       button.setAlpha(0.75);
-      button.setScale(2.0);
+      button.setScale(2.5);
     });
 
     // Click handler
     button.on('pointerdown', () => {
-      button.setScale(1.8);
+      button.setScale(2.3);
       this.toggleFullscreen();
     });
 
     button.on('pointerup', () => {
-      button.setScale(2.0);
+      button.setScale(2.5);
     });
 
     this.button = this.scene.add.container(0, 0);
