@@ -8,7 +8,6 @@ import { AudioManager } from '../systems/AudioManager';
  */
 export class MainMenuScene extends Phaser.Scene {
   private inputMapper!: InputMapper;
-  private audioManager!: AudioManager;
   private titleText!: Phaser.GameObjects.Text;
   private playButton!: Phaser.GameObjects.Text;
   private creditsText!: Phaser.GameObjects.Text;
@@ -20,7 +19,6 @@ export class MainMenuScene extends Phaser.Scene {
   create(): void {
     // Get systems from registry
     this.inputMapper = this.registry.get('inputMapper') as InputMapper;
-    this.audioManager = this.registry.get('audioManager') as AudioManager;
 
     // IMPORTANT: Set the scene so InputMapper listens to THIS scene's keyboard
     this.inputMapper.setScene(this);

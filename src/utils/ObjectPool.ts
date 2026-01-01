@@ -35,8 +35,8 @@ export class ObjectPool<T extends Phaser.GameObjects.GameObject> {
    * Return an object to the pool
    */
   public release(obj: T): void {
-    obj.setActive(false);
-    obj.setVisible(false);
+    if ('setActive' in obj) (obj as any).setActive(false);
+    if ('setVisible' in obj) (obj as any).setVisible(false);
     this.pool.killAndHide(obj);
   }
 

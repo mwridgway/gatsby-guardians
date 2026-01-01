@@ -10,7 +10,6 @@ import { Player } from '../entities/Player';
  */
 export class GamePlayScene extends Phaser.Scene {
   private inputMapper!: InputMapper;
-  private audioManager!: AudioManager;
   private adManager!: AdManager;
   private player!: Player;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
@@ -24,7 +23,6 @@ export class GamePlayScene extends Phaser.Scene {
 
     // Get systems from registry
     this.inputMapper = this.registry.get('inputMapper') as InputMapper;
-    this.audioManager = this.registry.get('audioManager') as AudioManager;
     this.adManager = this.registry.get('adManager') as AdManager;
 
     // IMPORTANT: Set the scene so InputMapper listens to THIS scene's keyboard

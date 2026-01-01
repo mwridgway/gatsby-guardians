@@ -39,7 +39,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0.5, 0.5);
   }
 
-  update(time: number, delta: number): void {
+  update(_time: number, _delta: number): void {
     if (!this.body) return;
 
     const body = this.body as Phaser.Physics.Arcade.Body;
