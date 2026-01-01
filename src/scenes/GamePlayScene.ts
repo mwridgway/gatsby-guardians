@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { BASE_WIDTH, BASE_HEIGHT, TILE_SIZE } from '../game/constants';
 import { InputMapper } from '../systems/InputMapper';
-import { AudioManager } from '../systems/AudioManager';
 import { AdManager } from '../systems/AdManager';
 import { Player } from '../entities/Player';
 

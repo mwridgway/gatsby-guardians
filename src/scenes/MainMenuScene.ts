@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { BASE_WIDTH, BASE_HEIGHT } from '../game/constants';
 import { InputMapper, GameAction } from '../systems/InputMapper';
-import { AudioManager } from '../systems/AudioManager';
 
 /**
  * MainMenuScene - Title screen and main menu
