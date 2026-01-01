@@ -3,6 +3,7 @@ import { BASE_WIDTH, BASE_HEIGHT, TILE_SIZE } from '../game/constants';
 import { InputMapper } from '../systems/InputMapper';
 import { AdManager } from '../systems/AdManager';
 import { Player } from '../entities/Player';
+import { SceneSwitcher } from '../systems/SceneSwitcher';
 
 /**
  * GamePlayScene - Main gameplay scene
@@ -12,6 +13,7 @@ export class GamePlayScene extends Phaser.Scene {
   private adManager!: AdManager;
   private player!: Player;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
+  private _sceneSwitcher!: SceneSwitcher;
 
   constructor() {
     super({ key: 'GamePlayScene' });
@@ -52,6 +54,9 @@ export class GamePlayScene extends Phaser.Scene {
       padding: { x: 4, y: 4 },
     });
     instructionsText.setScrollFactor(0);
+
+    // Add scene switcher for development
+    this._sceneSwitcher = new SceneSwitcher(this, true);
 
     console.log('GamePlayScene: Level ready');
   }
