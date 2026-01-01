@@ -44,7 +44,7 @@ function commandExists(command) {
  * Process graphics with TexturePacker
  */
 function processGraphics() {
-  console.log('\\n📦 Processing graphics...');
+  console.log('\n📦 Processing graphics...');
 
   const rawGraphicsDir = join(projectRoot, 'assets/raw/graphics');
   if (!existsSync(rawGraphicsDir)) {
@@ -103,7 +103,7 @@ function processGraphics() {
  * Process audio with FFmpeg
  */
 function processAudio() {
-  console.log('\\n🎵 Processing audio...');
+  console.log('\n🎵 Processing audio...');
 
   const rawAudioDir = join(projectRoot, 'assets/raw/audio');
   if (!existsSync(rawAudioDir)) {
@@ -131,7 +131,7 @@ function processAudio() {
  * Process Tiled maps
  */
 function processMaps() {
-  console.log('\\n🗺️  Processing maps...');
+  console.log('\n🗺️  Processing maps...');
 
   const rawMapsDir = join(projectRoot, 'assets/raw/maps');
   if (!existsSync(rawMapsDir)) {
@@ -155,7 +155,7 @@ function main() {
   processMaps();
 
   // Generate manifest and types
-  console.log('\\n📝 Generating manifest and types...');
+  console.log('\n📝 Generating manifest and types...');
   try {
     execSync('node tools/generate-manifest.js', { stdio: 'inherit' });
     execSync('node tools/generate-types.js', { stdio: 'inherit' });
@@ -164,7 +164,7 @@ function main() {
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-  console.log(`\\n✨ Asset processing complete in ${elapsed}s\\n`);
+  console.log(`\n✨ Asset processing complete in ${elapsed}s\n`);
 }
 
 main();

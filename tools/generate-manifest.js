@@ -120,7 +120,7 @@ function main() {
   const manifestPath = join(distDir, 'manifest.json');
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
-  console.log(`\\n✨ Manifest generated at: ${manifestPath}`);
+  console.log(`\n✨ Manifest generated at: ${manifestPath}`);
   console.log(`   - Atlases: ${Object.keys(manifest.atlases).length}`);
   console.log(`   - Audio: ${Object.keys(manifest.audio).length}`);
   console.log(`   - Maps: ${Object.keys(manifest.maps).length}`);

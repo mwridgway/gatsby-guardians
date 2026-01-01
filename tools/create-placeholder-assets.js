@@ -63,7 +63,7 @@ writeFileSync(join(tilesetDir, 'ground_right.png'), groundTilePNG);
 writeFileSync(join(tilesetDir, 'block.png'), groundTilePNG);
 writeFileSync(join(tilesetDir, 'sky.png'), playerIdlePNG);
 
-console.log('\\n✨ Placeholder assets created!');
+console.log('\n✨ Placeholder assets created!');
 console.log('   - Player frames: 7');
 console.log('   - Tileset tiles: 5');
-console.log('\\n💡 Run "npm run process:assets" to generate atlases');
+console.log('\n💡 Run "npm run process:assets" to generate atlases');

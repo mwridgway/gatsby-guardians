@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BASE_WIDTH, BASE_HEIGHT, TILE_SIZE } from '../game/constants';
+import { BASE_WIDTH, BASE_HEIGHT, TILE_SIZE, ENABLE_SCENE_SWITCHER } from '../game/constants';
 import { InputMapper } from '../systems/InputMapper';
 import { AdManager } from '../systems/AdManager';
 import { Player } from '../entities/Player';
@@ -13,7 +13,6 @@ export class GamePlayScene extends Phaser.Scene {
   private adManager!: AdManager;
   private player!: Player;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
-  private _sceneSwitcher!: SceneSwitcher;
 
   constructor() {
     super({ key: 'GamePlayScene' });
@@ -56,7 +55,7 @@ export class GamePlayScene extends Phaser.Scene {
     instructionsText.setScrollFactor(0);
 
     // Add scene switcher for development
-    this._sceneSwitcher = new SceneSwitcher(this, true);
+    new SceneSwitcher(this, ENABLE_SCENE_SWITCHER);
 
     console.log('GamePlayScene: Level ready');
   }

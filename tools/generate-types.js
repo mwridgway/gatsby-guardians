@@ -90,7 +90,7 @@ export interface AssetManifest {
 
   writeFileSync(typesPath, types);
 
-  console.log(`\\n✨ Type definitions generated at: ${typesPath}`);
+  console.log(`\n✨ Type definitions generated at: ${typesPath}`);
   console.log(`   - Atlas types: ${atlasKeys.length}`);
   console.log(`   - Audio types: ${audioKeys.length}`);
   console.log(`   - Map types: ${mapKeys.length}`);

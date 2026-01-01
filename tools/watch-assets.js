@@ -29,7 +29,7 @@ function processAssets() {
   }
 
   processing = true;
-  console.log('\\n🔄 Change detected, processing assets...');
+  console.log('\n🔄 Change detected, processing assets...');
 
   try {
     execSync('node tools/process-assets.js', {
@@ -37,7 +37,7 @@ function processAssets() {
       cwd: projectRoot
     });
 
-    console.log('✅ Processing complete\\n');
+    console.log('✅ Processing complete\n');
   } catch (error) {
     console.error('❌ Processing failed:', error.message);
   } finally {
@@ -72,11 +72,11 @@ watcher
     processAssets();
   });
 
-console.log('✨ Watcher ready! Edit files in assets/raw to trigger processing.\\n');
+console.log('✨ Watcher ready! Edit files in assets/raw to trigger processing.\n');
 
 // Keep process alive
 process.on('SIGINT', () => {
-  console.log('\\n👋 Stopping watcher...');
+  console.log('\n👋 Stopping watcher...');
   watcher.close();
   process.exit(0);
 });

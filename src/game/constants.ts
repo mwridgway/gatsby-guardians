@@ -15,3 +15,6 @@ export const INPUT_BUFFER_FRAMES = 5;
 export const TILE_SIZE = 16;
 export const MAP_WIDTH = 40; // 640 / 16
 export const MAP_HEIGHT = 23; // 360 / 16 (rounded up)
+
+// Development constants
+export const ENABLE_SCENE_SWITCHER = true; // Set to false to disable scene switching in production
