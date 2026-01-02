@@ -34,6 +34,11 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        /* Safe area insets for device notches/home indicators */
+        padding-top: env(safe-area-inset-top);
+        padding-right: env(safe-area-inset-right);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
       }
 
       canvas {
@@ -41,6 +46,8 @@
         image-rendering: pixelated;
         image-rendering: -moz-crisp-edges;
         image-rendering: crisp-edges;
+        /* Prevent touch scrolling */
+        touch-action: none;
       }
     </style>
   </head>

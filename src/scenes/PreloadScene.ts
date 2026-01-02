@@ -35,6 +35,12 @@ export class PreloadScene extends Phaser.Scene {
       margin: 0,
     });
 
+    // Load parallax background layers for side-scrolling scene
+    this.load.image('parallax-sky', 'assets/parallax-sky.png');
+    this.load.image('parallax-mountains', 'assets/parallax-mountains.png');
+    this.load.image('parallax-mid', 'assets/parallax-mid.png');
+    this.load.image('parallax-foreground', 'assets/parallax-foreground.png');
+
     // Load placeholder assets (will be added after asset pipeline is set up)
     // For now, just create some simple graphics
   }

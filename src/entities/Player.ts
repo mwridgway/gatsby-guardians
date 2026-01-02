@@ -1,14 +1,21 @@
 import Phaser from 'phaser';
 import { InputMapper, GameAction } from '../systems/InputMapper';
 import { PLAYER_SPEED, PLAYER_JUMP_VELOCITY, COYOTE_TIME_FRAMES, INPUT_BUFFER_FRAMES } from '../game/constants';
+import { WeaponManager } from '../systems/WeaponManager';
+import { StatusEffectManager } from '../systems/StatusEffectManager';
+import { StatusEffectType } from '../systems/status/StatusEffect';
+import { SoggyEffect } from '../systems/status/SoggyEffect';
 
 /**
  * Player entity with physics, movement, and game feel enhancements
  */
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private inputMapper: InputMapper;
+  private weaponManager: WeaponManager;
+  private statusEffectManager: StatusEffectManager;
   private coyoteFrames: number = 0;
   private jumpBufferFrames: number = 0;
+  private currentSpeed: number = PLAYER_SPEED;
 
   constructor(scene: Phaser.Scene, x: number, y: number, inputMapper: InputMapper) {
     // Create a simple colored rectangle as placeholder sprite
@@ -23,9 +30,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.inputMapper = inputMapper;
 
+    // Get weapon and status systems from registry
+    this.weaponManager = scene.registry.get('weaponManager') as WeaponManager;
+    this.statusEffectManager = scene.registry.get('statusEffectManager') as StatusEffectManager;
+
     // Add to scene
     scene.add.existing(this);
     scene.physics.add.existing(this);
+
+    // Set this player as the owner/target for systems
+    if (this.weaponManager) {
+      this.weaponManager.setOwner(this);
+    }
+    if (this.statusEffectManager) {
+      this.statusEffectManager.setTarget(this);
+    }
 
     // Set up physics body
     if (this.body) {
@@ -43,6 +62,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!this.body) return;
 
     const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // Update systems
+    if (this.weaponManager) {
+      this.weaponManager.update();
+    }
+    if (this.statusEffectManager) {
+      this.statusEffectManager.update();
+    }
 
     // Update coyote time
     if (body.onFloor()) {
@@ -74,10 +101,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // Handle horizontal movement
+    // Handle horizontal movement (use currentSpeed which can be modified by status effects)
     const axis = this.inputMapper.getAxis();
     if (axis.x !== 0) {
-      body.setVelocityX(axis.x * PLAYER_SPEED);
+      body.setVelocityX(axis.x * this.currentSpeed);
 
       // Flip sprite based on direction
       if (axis.x < 0) {
@@ -99,8 +126,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.x = Math.round(this.x);
     this.y = Math.round(this.y);
 
+    // Handle weapon input
+    this.handleWeaponInput();
+
     // Update animations based on state
     this.updateAnimation();
+  }
+
+  private handleWeaponInput(): void {
+    if (!this.weaponManager) return;
+
+    const inputState = this.inputMapper.getInputState();
+
+    // Weapon switching
+    if (inputState.weaponNext) {
+      this.weaponManager.nextWeapon();
+    }
+    if (inputState.weaponPrevious) {
+      this.weaponManager.previousWeapon();
+    }
+
+    // Primary fire
+    if (inputState.primaryFireJustPressed || inputState.primaryFire) {
+      const facingDirection = {
+        x: this.flipX ? -1 : 1,
+        y: 0,
+      };
+      this.weaponManager.fire(facingDirection);
+    }
   }
 
   private jump(): void {
@@ -137,14 +190,53 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * Called when player takes damage
    */
   public takeDamage(amount: number): void {
-    // TODO: Implement health system
-    console.log(`Player took ${amount} damage`);
+    let finalDamage = amount;
+
+    // Check for Soggy status (2x damage)
+    if (this.statusEffectManager) {
+      const soggyEffect = this.statusEffectManager.getEffect(StatusEffectType.SOGGY);
+      if (soggyEffect) {
+        finalDamage *= (soggyEffect as SoggyEffect).getDamageMultiplier();
+      }
+    }
+
+    console.log(`Player took ${finalDamage} damage (base: ${amount})`);
 
     // Flash red briefly
     this.setTint(0xff0000);
     this.scene.time.delayedCall(100, () => {
-      this.clearTint();
+      // Only clear tint if not soggy
+      if (!this.statusEffectManager || !this.statusEffectManager.hasEffect(StatusEffectType.SOGGY)) {
+        this.clearTint();
+      } else {
+        this.setTint(0x8888ff); // Restore soggy tint
+      }
     });
+
+    // TODO: Reduce health
+  }
+
+  /**
+   * Apply Soggy status (called by saturation mechanic)
+   */
+  public applySoggy(duration: number = 300): void {
+    if (!this.statusEffectManager) return;
+    const soggyEffect = new SoggyEffect(duration);
+    this.statusEffectManager.applyEffect(soggyEffect);
+  }
+
+  /**
+   * Get current speed (can be modified by status effects)
+   */
+  public getSpeed(): number {
+    return this.currentSpeed;
+  }
+
+  /**
+   * Set current speed (called by status effects)
+   */
+  public setSpeed(speed: number): void {
+    this.currentSpeed = speed;
   }
 
   /**

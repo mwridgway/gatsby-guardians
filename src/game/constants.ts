@@ -9,7 +9,7 @@ export const PLAYER_JUMP_VELOCITY = -300;
 
 // Game feel constants
 export const COYOTE_TIME_FRAMES = 6;
-export const INPUT_BUFFER_FRAMES = 5;
+export const INPUT_BUFFER_FRAMES = 6; // 100ms at 60fps (matches coyote time)
 
 // Tile constants
 export const TILE_SIZE = 16;

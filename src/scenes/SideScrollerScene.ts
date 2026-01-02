@@ -66,65 +66,28 @@ export class SideScrollerScene extends Phaser.Scene {
   private createParallaxLayers(): void {
     // Create multiple parallax layers with different scroll speeds
     // Layer 0: Far background (slowest)
-    const layer0 = this.add.tileSprite(0, 0, this.LEVEL_WIDTH, BASE_HEIGHT, '');
+    const layer0 = this.add.tileSprite(0, 0, this.LEVEL_WIDTH, BASE_HEIGHT, 'parallax-sky');
     layer0.setOrigin(0, 0);
-    layer0.setTint(0x1a1a2e); // Dark blue
     layer0.setScrollFactor(0.1);
     this.parallaxLayers.push(layer0);
 
     // Layer 1: Mountains/Hills
-    const layer1 = this.add.tileSprite(0, BASE_HEIGHT - 150, this.LEVEL_WIDTH, 150, '');
+    const layer1 = this.add.tileSprite(0, BASE_HEIGHT - 150, this.LEVEL_WIDTH, 150, 'parallax-mountains');
     layer1.setOrigin(0, 0);
-    layer1.setTint(0x16213e); // Slightly lighter blue
     layer1.setScrollFactor(0.3);
     this.parallaxLayers.push(layer1);
 
     // Layer 2: Mid background
-    const layer2 = this.add.tileSprite(0, BASE_HEIGHT - 120, this.LEVEL_WIDTH, 120, '');
+    const layer2 = this.add.tileSprite(0, BASE_HEIGHT - 120, this.LEVEL_WIDTH, 120, 'parallax-mid');
     layer2.setOrigin(0, 0);
-    layer2.setTint(0x0f3460); // Medium blue
     layer2.setScrollFactor(0.5);
     this.parallaxLayers.push(layer2);
 
     // Layer 3: Foreground elements
-    const layer3 = this.add.tileSprite(0, BASE_HEIGHT - 80, this.LEVEL_WIDTH, 80, '');
+    const layer3 = this.add.tileSprite(0, BASE_HEIGHT - 80, this.LEVEL_WIDTH, 80, 'parallax-foreground');
     layer3.setOrigin(0, 0);
-    layer3.setTint(0x533483); // Purple-ish
     layer3.setScrollFactor(0.7);
     this.parallaxLayers.push(layer3);
-
-    // Add visual elements to layers (simple patterns)
-    this.drawLayerPatterns();
-  }
-
-  private drawLayerPatterns(): void {
-    // Create simple patterns for each layer using graphics
-    // This is a placeholder - you'd normally use actual sprite assets
-    
-    // Add some "stars" to the far background
-    for (let i = 0; i < 50; i++) {
-      const star = this.add.circle(
-        Phaser.Math.Between(0, this.LEVEL_WIDTH),
-        Phaser.Math.Between(0, BASE_HEIGHT - 200),
-        1,
-        0xffffff,
-        0.8
-      );
-      star.setScrollFactor(0.1);
-    }
-
-    // Add some "clouds" to middle layers
-    for (let i = 0; i < 20; i++) {
-      const cloud = this.add.ellipse(
-        Phaser.Math.Between(0, this.LEVEL_WIDTH),
-        Phaser.Math.Between(50, 150),
-        Phaser.Math.Between(40, 80),
-        Phaser.Math.Between(20, 40),
-        0xcccccc,
-        0.3
-      );
-      cloud.setScrollFactor(Phaser.Math.FloatBetween(0.3, 0.6));
-    }
   }
 
   private createPlatforms(): void {
