@@ -31,6 +31,8 @@ export class InputMapper {
   private virtualJoystick: VirtualJoystick | null = null;
   private gamepadIndex: number = 0;
   private keysPressed: Set<string> = new Set();
+  private mobileJumpPressed: boolean = false;
+  private mobileFirePressed: boolean = false;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -150,24 +152,16 @@ export class InputMapper {
     jumpButton.setScrollFactor(0);
     jumpButton.setDepth(9999);
 
-    let jumpPointer: Phaser.Input.Pointer | null = null;
-    jumpButton.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    jumpButton.on('pointerdown', () => {
       console.log('Jump button pressed');
-      jumpPointer = pointer;
-      this.currentActions.add(GameAction.JUMP);
+      this.mobileJumpPressed = true;
     });
-    jumpButton.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (jumpPointer === pointer) {
-        console.log('Jump button released');
-        jumpPointer = null;
-        this.currentActions.delete(GameAction.JUMP);
-      }
+    jumpButton.on('pointerup', () => {
+      console.log('Jump button released');
+      this.mobileJumpPressed = false;
     });
-    jumpButton.on('pointerout', (pointer: Phaser.Input.Pointer) => {
-      if (jumpPointer === pointer) {
-        jumpPointer = null;
-        this.currentActions.delete(GameAction.JUMP);
-      }
+    jumpButton.on('pointerout', () => {
+      this.mobileJumpPressed = false;
     });
 
     // Primary fire button (right side, upper)
@@ -181,24 +175,16 @@ export class InputMapper {
     fireButton.setScrollFactor(0);
     fireButton.setDepth(9999);
 
-    let firePointer: Phaser.Input.Pointer | null = null;
-    fireButton.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    fireButton.on('pointerdown', () => {
       console.log('Fire button pressed');
-      firePointer = pointer;
-      this.currentActions.add(GameAction.PRIMARY_FIRE);
+      this.mobileFirePressed = true;
     });
-    fireButton.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (firePointer === pointer) {
-        console.log('Fire button released');
-        firePointer = null;
-        this.currentActions.delete(GameAction.PRIMARY_FIRE);
-      }
+    fireButton.on('pointerup', () => {
+      console.log('Fire button released');
+      this.mobileFirePressed = false;
     });
-    fireButton.on('pointerout', (pointer: Phaser.Input.Pointer) => {
-      if (firePointer === pointer) {
-        firePointer = null;
-        this.currentActions.delete(GameAction.PRIMARY_FIRE);
-      }
+    fireButton.on('pointerout', () => {
+      this.mobileFirePressed = false;
     });
   }
 
@@ -225,8 +211,18 @@ export class InputMapper {
     // Check gamepad input
     this.updateGamepadInput();
 
-    // Check virtual joystick (lowest priority)
+    // Check virtual joystick and mobile buttons
     this.updateVirtualJoystickInput();
+    this.updateMobileInput();
+  }
+
+  private updateMobileInput(): void {
+    if (this.mobileJumpPressed) {
+      this.currentActions.add(GameAction.JUMP);
+    }
+    if (this.mobileFirePressed) {
+      this.currentActions.add(GameAction.PRIMARY_FIRE);
+    }
   }
 
   private updateKeyboardInput(): void {

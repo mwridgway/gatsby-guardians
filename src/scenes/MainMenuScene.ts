@@ -1,12 +1,14 @@
 import Phaser from 'phaser';
 import { BASE_WIDTH, BASE_HEIGHT } from '../game/constants';
 import { InputMapper, GameAction } from '../systems/InputMapper';
+import { FullscreenManager } from '../systems/FullscreenManager';
 
 /**
  * MainMenuScene - Title screen and main menu
  */
 export class MainMenuScene extends Phaser.Scene {
   private inputMapper!: InputMapper;
+  private fullscreenManager!: FullscreenManager;
   private titleText!: Phaser.GameObjects.Text;
   private playButton!: Phaser.GameObjects.Text;
   private creditsText!: Phaser.GameObjects.Text;
@@ -18,6 +20,7 @@ export class MainMenuScene extends Phaser.Scene {
   create(): void {
     // Get systems from registry
     this.inputMapper = this.registry.get('inputMapper') as InputMapper;
+    this.fullscreenManager = this.registry.get('fullscreenManager') as FullscreenManager;
 
     // IMPORTANT: Set the scene so InputMapper listens to THIS scene's keyboard
     this.inputMapper.setScene(this);
@@ -33,7 +36,8 @@ export class MainMenuScene extends Phaser.Scene {
     this.titleText.setOrigin(0.5);
 
     // Create play button
-    this.playButton = this.add.text(BASE_WIDTH / 2, BASE_HEIGHT / 2, 'PRESS SPACE TO PLAY', {
+    const playButtonText = this.fullscreenManager.isMobile ? 'TAP TO PLAY' : 'PRESS SPACE TO PLAY';
+    this.playButton = this.add.text(BASE_WIDTH / 2, BASE_HEIGHT / 2, playButtonText, {
       fontFamily: 'Arial',
       fontSize: '20px',
       color: '#ffffff',
@@ -89,11 +93,16 @@ export class MainMenuScene extends Phaser.Scene {
   private startGame(): void {
     console.log('Starting game...');
 
+    // On mobile, trigger fullscreen
+    if (this.fullscreenManager) {
+        this.fullscreenManager.enterFullscreenOnMobile();
+    }
+
     // Stop button tween
     this.tweens.killTweensOf(this.playButton);
 
     // Transition to gameplay immediately (no fade for now)
-    console.log('Transitioning to GamePlayScene...');
-    this.scene.start('GamePlayScene');
+    console.log('Transitioning to SideScrollerScene...');
+    this.scene.start('SideScrollerScene');
   }
 }

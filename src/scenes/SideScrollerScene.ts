@@ -4,7 +4,9 @@ import { InputMapper } from '../systems/InputMapper';
 import { AdManager } from '../systems/AdManager';
 import { Player } from '../entities/Player';
 import { SceneSwitcher } from '../systems/SceneSwitcher';
-import { FullscreenManager } from '../systems/FullscreenManager';
+import { WeaponManager } from '../systems/WeaponManager';
+import { StatusEffectManager } from '../systems/StatusEffectManager';
+import { TilemapManager } from '../systems/TilemapManager';
 
 /**
  * SideScrollerScene - Side-scrolling level with parallax backgrounds
@@ -12,10 +14,12 @@ import { FullscreenManager } from '../systems/FullscreenManager';
 export class SideScrollerScene extends Phaser.Scene {
   private inputMapper!: InputMapper;
   private adManager!: AdManager;
+  private weaponManager!: WeaponManager;
+  private statusEffectManager!: StatusEffectManager;
   private player!: Player;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
-  private fullscreenManager!: FullscreenManager;
-  
+  private tilemapManager!: TilemapManager;
+
   // Parallax layers
   private parallaxLayers: Phaser.GameObjects.TileSprite[] = [];
   private readonly LEVEL_WIDTH = BASE_WIDTH * 4; // 4 screens wide
@@ -30,6 +34,12 @@ export class SideScrollerScene extends Phaser.Scene {
     // Get systems from registry
     this.inputMapper = this.registry.get('inputMapper') as InputMapper;
     this.adManager = this.registry.get('adManager') as AdManager;
+
+    // Initialize scene-specific systems
+    this.weaponManager = new WeaponManager(this);
+    this.statusEffectManager = new StatusEffectManager(this);
+    this.registry.set('weaponManager', this.weaponManager);
+    this.registry.set('statusEffectManager', this.statusEffectManager);
 
     // Set the scene for InputMapper
     this.inputMapper.setScene(this);
@@ -52,10 +62,6 @@ export class SideScrollerScene extends Phaser.Scene {
     
     // Set world bounds for physics
     this.physics.world.setBounds(0, 0, this.LEVEL_WIDTH, BASE_HEIGHT);
-
-    // Add fullscreen button
-    this.fullscreenManager = new FullscreenManager(this);
-    void this.fullscreenManager; // Keep reference to prevent garbage collection
 
     // Add scene switcher for development
     new SceneSwitcher(this, ENABLE_SCENE_SWITCHER);
@@ -91,66 +97,92 @@ export class SideScrollerScene extends Phaser.Scene {
   }
 
   private createPlatforms(): void {
-    this.platforms = this.physics.add.staticGroup();
+    // Load tileset metadata
+    const metadata = this.cache.json.get('granite-concrete-metadata');
+
+    // Calculate grid dimensions
+    const gridWidth = Math.ceil(this.LEVEL_WIDTH / TILE_SIZE);
+    const gridHeight = Math.ceil(BASE_HEIGHT / TILE_SIZE);
+
+    // Create tilemap manager
+    this.tilemapManager = new TilemapManager(
+      this,
+      'granite-concrete-tileset',
+      metadata,
+      gridWidth,
+      gridHeight
+    );
+
+    // Convert pixel coordinates to grid coordinates for ground
+    const groundGridY = Math.floor((BASE_HEIGHT - TILE_SIZE) / TILE_SIZE);
 
     // Create ground platform along the entire level
-    const groundY = BASE_HEIGHT - TILE_SIZE;
-    for (let x = 0; x < this.LEVEL_WIDTH; x += TILE_SIZE) {
-      const platform = this.add.rectangle(
-        x + TILE_SIZE / 2,
-        groundY + TILE_SIZE / 2,
-        TILE_SIZE,
-        TILE_SIZE,
-        0x4a7c59
-      );
-      this.physics.add.existing(platform, true);
-      this.platforms.add(platform);
+    for (let gridX = 0; gridX < gridWidth; gridX++) {
+      this.tilemapManager.setTile(gridX, groundGridY, 1);
     }
 
     // Create varied floating platforms throughout the level
     // Section 1: Rising platforms
-    this.createPlatform(100, BASE_HEIGHT - 80, 6);
-    this.createPlatform(200, BASE_HEIGHT - 120, 4);
-    this.createPlatform(300, BASE_HEIGHT - 160, 3);
-    
+    this.createTilemapPlatform(100, BASE_HEIGHT - 80, 6);
+    this.createTilemapPlatform(200, BASE_HEIGHT - 120, 4);
+    this.createTilemapPlatform(300, BASE_HEIGHT - 160, 3);
+
     // Section 2: Gap with platforms to jump
-    this.createPlatform(450, BASE_HEIGHT - 100, 3);
-    this.createPlatform(550, BASE_HEIGHT - 120, 3);
-    
+    this.createTilemapPlatform(450, BASE_HEIGHT - 100, 3);
+    this.createTilemapPlatform(550, BASE_HEIGHT - 120, 3);
+
     // Section 3: Descending platforms
-    this.createPlatform(700, BASE_HEIGHT - 160, 4);
-    this.createPlatform(850, BASE_HEIGHT - 120, 5);
-    this.createPlatform(1000, BASE_HEIGHT - 80, 6);
-    
+    this.createTilemapPlatform(700, BASE_HEIGHT - 160, 4);
+    this.createTilemapPlatform(850, BASE_HEIGHT - 120, 5);
+    this.createTilemapPlatform(1000, BASE_HEIGHT - 80, 6);
+
     // Section 4: Varied heights
-    this.createPlatform(1200, BASE_HEIGHT - 140, 3);
-    this.createPlatform(1350, BASE_HEIGHT - 100, 4);
-    this.createPlatform(1500, BASE_HEIGHT - 180, 3);
-    
+    this.createTilemapPlatform(1200, BASE_HEIGHT - 140, 3);
+    this.createTilemapPlatform(1350, BASE_HEIGHT - 100, 4);
+    this.createTilemapPlatform(1500, BASE_HEIGHT - 180, 3);
+
     // Section 5: Wide platforms
-    this.createPlatform(1700, BASE_HEIGHT - 120, 8);
-    this.createPlatform(1900, BASE_HEIGHT - 80, 10);
-    
+    this.createTilemapPlatform(1700, BASE_HEIGHT - 120, 8);
+    this.createTilemapPlatform(1900, BASE_HEIGHT - 80, 10);
+
     // Section 6: Challenge section with small platforms
-    this.createPlatform(2150, BASE_HEIGHT - 100, 2);
-    this.createPlatform(2250, BASE_HEIGHT - 140, 2);
-    this.createPlatform(2350, BASE_HEIGHT - 100, 2);
-    this.createPlatform(2450, BASE_HEIGHT - 160, 3);
+    this.createTilemapPlatform(2150, BASE_HEIGHT - 100, 2);
+    this.createTilemapPlatform(2250, BASE_HEIGHT - 140, 2);
+    this.createTilemapPlatform(2350, BASE_HEIGHT - 100, 2);
+    this.createTilemapPlatform(2450, BASE_HEIGHT - 160, 3);
+
+    // Render the tilemap
+    this.tilemapManager.render();
+
+    // Create physics bodies for collision
+    this.platforms = this.tilemapManager.createPhysicsBodies(this.physics);
+
+    // Add concrete walls and park benches as decorative platforms (after platforms group is created)
+    this.addPlatformObjects();
   }
 
-  private createPlatform(x: number, y: number, width: number): void {
-    for (let i = 0; i < width; i++) {
-      const px = x + i * TILE_SIZE;
-      const platform = this.add.rectangle(
-        px + TILE_SIZE / 2,
-        y + TILE_SIZE / 2,
-        TILE_SIZE,
-        TILE_SIZE,
-        0x6b8e23
-      );
-      this.physics.add.existing(platform, true);
-      this.platforms.add(platform);
-    }
+  private createTilemapPlatform(x: number, y: number, width: number): void {
+    const gridX = Math.floor(x / TILE_SIZE);
+    const gridY = Math.floor(y / TILE_SIZE);
+    this.tilemapManager.createPlatform(gridX, gridY, width);
+  }
+
+  private addPlatformObjects(): void {
+    // Add concrete walls as low barriers
+    this.addPlatformObject('concrete-wall', 600, BASE_HEIGHT - 100);
+    this.addPlatformObject('concrete-wall', 1100, BASE_HEIGHT - 140);
+    this.addPlatformObject('concrete-wall', 1600, BASE_HEIGHT - 80);
+
+    // Add park benches as decorative platforms
+    this.addPlatformObject('park-bench', 400, BASE_HEIGHT - TILE_SIZE - 32);
+    this.addPlatformObject('park-bench', 1400, BASE_HEIGHT - 120 - 32);
+    this.addPlatformObject('park-bench', 2000, BASE_HEIGHT - TILE_SIZE - 32);
+  }
+
+  private addPlatformObject(texture: string, x: number, y: number): void {
+    const sprite = this.physics.add.staticImage(x, y, texture);
+    sprite.setOrigin(0, 1); // Bottom-left origin for easier placement
+    this.platforms.add(sprite);
   }
 
   private createPlayer(): void {

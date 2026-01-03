@@ -7,9 +7,11 @@ export class FullscreenManager {
   private scene: Phaser.Scene;
   private button?: Phaser.GameObjects.Container;
   private isFullscreen: boolean = false;
+  public isMobile: boolean = false;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    this.isMobile = 'ontouchstart' in window;
     this.createFullscreenButton();
     this.setupFullscreenListeners();
   }
@@ -88,6 +90,12 @@ export class FullscreenManager {
       this.enterFullscreen();
     } else {
       this.exitFullscreen();
+    }
+  }
+
+  public enterFullscreenOnMobile(): void {
+    if (this.isMobile && !this.isFullscreen) {
+      this.enterFullscreen();
     }
   }
 

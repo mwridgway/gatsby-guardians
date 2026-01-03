@@ -41,6 +41,14 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image('parallax-mid', 'assets/parallax-mid.png');
     this.load.image('parallax-foreground', 'assets/parallax-foreground.png');
 
+    // Load sidescroller tileset
+    this.load.image('granite-concrete-tileset', 'assets/granite-concrete-tileset.png');
+    this.load.json('granite-concrete-metadata', 'assets/granite-concrete-tileset.json');
+
+    // Load platform objects
+    this.load.image('concrete-wall', 'assets/concrete-wall.png');
+    this.load.image('park-bench', 'assets/park-bench.png');
+
     // Load placeholder assets (will be added after asset pipeline is set up)
     // For now, just create some simple graphics
   }
