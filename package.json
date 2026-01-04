@@ -8,7 +8,7 @@
     "preview": "vite preview",
     "watch:assets": "node tools/watch-assets.js",
     "process:assets": "node tools/process-assets.js",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist -r https://${DEPLOY_TOKEN}@github.com/mwridgway/gatsby-guardians.git"
   },
   "dependencies": {
     "howler": "^2.2.4",
