@@ -51,6 +51,52 @@ npm run build
 
 Output will be in the `dist/` directory.
 
+### Deploy to GitHub Pages
+
+The repository includes a GitHub Actions workflow that automatically deploys to GitHub Pages on every push to the `main` branch.
+
+#### Required Setup
+
+To enable automatic deployment, you need to create a `DEPLOY_TOKEN` secret:
+
+1. **Create a Personal Access Token (PAT)**:
+   - Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Click "Generate new token (classic)"
+   - Name: `Gatsby Guardians Deploy Token`
+   - Expiration: Choose your preferred expiration
+   - Scopes: Select `repo` (Full control of private repositories)
+   - Click "Generate token" and copy the token
+
+2. **Add the token as a repository secret**:
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `DEPLOY_TOKEN`
+   - Value: Paste your Personal Access Token
+   - Click "Add secret"
+
+3. **Enable GitHub Pages**:
+   - Go to repository → Settings → Pages
+   - Source: Deploy from a branch
+   - Branch: `gh-pages` / `(root)`
+   - Click "Save"
+
+The workflow will now automatically build and deploy your game to GitHub Pages whenever you push to `main`.
+
+#### Manual Deployment
+
+To deploy manually from your local machine:
+
+```bash
+# Build the project
+npm run build
+
+# Set the DEPLOY_TOKEN environment variable
+export DEPLOY_TOKEN=your_personal_access_token
+
+# Deploy to GitHub Pages
+npm run deploy
+```
+
 ## Project Structure
 
 ```
