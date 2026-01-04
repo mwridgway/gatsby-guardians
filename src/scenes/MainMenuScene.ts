@@ -102,7 +102,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.tweens.killTweensOf(this.playButton);
 
     // Transition to gameplay immediately (no fade for now)
-    console.log('Transitioning to SideScrollerScene...');
-    this.scene.start('SideScrollerScene');
+    console.log('Transitioning to PromenadeScene...');
+    this.scene.start('PromenadeScene');
   }
 }

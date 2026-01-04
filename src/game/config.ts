@@ -3,8 +3,7 @@ import { BASE_WIDTH, BASE_HEIGHT, GRAVITY } from './constants';
 import { BootScene } from '../scenes/BootScene';
 import { PreloadScene } from '../scenes/PreloadScene';
 import { MainMenuScene } from '../scenes/MainMenuScene';
-import { GamePlayScene } from '../scenes/GamePlayScene';
-import { SideScrollerScene } from '../scenes/SideScrollerScene';
+import { PromenadeScene } from '../scenes/PromenadeScene';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.WEBGL,
@@ -32,7 +31,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, PreloadScene, MainMenuScene, GamePlayScene, SideScrollerScene],
+  scene: [BootScene, PreloadScene, MainMenuScene, PromenadeScene],
   fps: {
     target: 60,
     forceSetTimeOut: false,

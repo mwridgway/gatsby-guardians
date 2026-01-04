@@ -35,19 +35,26 @@ export class PreloadScene extends Phaser.Scene {
       margin: 0,
     });
 
-    // Load parallax background layers for side-scrolling scene
-    this.load.image('parallax-sky', 'assets/parallax-sky.png');
-    this.load.image('parallax-mountains', 'assets/parallax-mountains.png');
-    this.load.image('parallax-mid', 'assets/parallax-mid.png');
-    this.load.image('parallax-foreground', 'assets/parallax-foreground.png');
+    // Load Cape Town Promenade parallax background layers
+    this.load.image('parallax-sky', 'assets/parallax-sky-simple.png');
+    this.load.image('parallax-mountains', 'assets/lions-head-mountain-transparent.png');
+    this.load.image('parallax-mid', 'assets/beach-road-buildings-transparent.png');
+    this.load.image('parallax-foreground', 'assets/promenade-railing.png');
 
-    // Load sidescroller tileset
-    this.load.image('granite-concrete-tileset', 'assets/granite-concrete-tileset.png');
-    this.load.json('granite-concrete-metadata', 'assets/granite-concrete-tileset.json');
+    // Load promenade tileset
+    this.load.image('promenade-tileset', 'assets/promenade-tileset.png');
+    this.load.json('promenade-metadata', 'assets/promenade-tileset.json');
 
-    // Load platform objects
-    this.load.image('concrete-wall', 'assets/concrete-wall.png');
-    this.load.image('park-bench', 'assets/park-bench.png');
+    // Load character sprites
+    this.load.image('character-south', 'assets/character-athlone/rotations/south.png');
+    this.load.image('character-west', 'assets/character-athlone/rotations/west.png');
+    this.load.image('character-east', 'assets/character-athlone/rotations/east.png');
+    this.load.image('character-north', 'assets/character-athlone/rotations/north.png');
+
+    // Load promenade objects
+    this.load.image('street-lamp', 'assets/street-lamp.png');
+    this.load.image('gym-equipment', 'assets/gym-equipment.png');
+    this.load.image('trash-bin', 'assets/trash-bin.png');
 
     // Load placeholder assets (will be added after asset pipeline is set up)
     // For now, just create some simple graphics

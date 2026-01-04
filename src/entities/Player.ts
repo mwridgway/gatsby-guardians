@@ -18,15 +18,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private currentSpeed: number = PLAYER_SPEED;
 
   constructor(scene: Phaser.Scene, x: number, y: number, inputMapper: InputMapper) {
-    // Create a simple colored rectangle as placeholder sprite
-    // This will be replaced with actual sprite once assets are loaded
-    const graphics = scene.add.graphics();
-    graphics.fillStyle(0x00ff00, 1);
-    graphics.fillRect(0, 0, 16, 16);
-    graphics.generateTexture('player-placeholder', 16, 16);
-    graphics.destroy();
-
-    super(scene, x, y, 'player-placeholder');
+    // Use the Athlone character sprite
+    super(scene, x, y, 'character-west');
 
     this.inputMapper = inputMapper;
 
@@ -108,9 +101,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       // Flip sprite based on direction
       if (axis.x < 0) {
-        this.setFlipX(true);
+        this.setFlipX(false); // Moving left - keep west sprite as-is
       } else if (axis.x > 0) {
-        this.setFlipX(false);
+        this.setFlipX(true); // Moving right - flip west sprite to face right
       }
     } else {
       // Apply friction when not moving
@@ -170,20 +163,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private updateAnimation(): void {
     if (!this.body) return;
 
-    const body = this.body as Phaser.Physics.Arcade.Body;
-
-    // TODO: Replace with actual animations once sprite assets are loaded
-    // For now, just change tint based on state
-    if (!body.onFloor()) {
-      // In air - darker green
-      this.setTint(0x00aa00);
-    } else if (Math.abs(body.velocity.x) > 1) {
-      // Moving - bright green
-      this.setTint(0x00ff00);
-    } else {
-      // Idle - medium green
-      this.setTint(0x00cc00);
-    }
+    // TODO: Add actual sprite animations when animation assets are available
+    // For now, the character sprite displays without tints
   }
 
   /**

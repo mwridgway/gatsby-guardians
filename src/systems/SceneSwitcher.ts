@@ -2,10 +2,9 @@ import Phaser from 'phaser';
 
 /**
  * SceneSwitcher - Development tool for switching between scenes
- * 
+ *
  * Usage:
- * - Press 1: GamePlayScene (static platformer)
- * - Press 2: SideScrollerScene (parallax side-scroller)
+ * - Press 1: PromenadeScene (Sea Point Promenade)
  * - Press ESC: Return to MainMenuScene
  */
 export class SceneSwitcher {
@@ -15,8 +14,7 @@ export class SceneSwitcher {
   private buttonContainer?: Phaser.GameObjects.Container;
 
   private sceneMap: Map<number, string> = new Map([
-    [1, 'GamePlayScene'],
-    [2, 'SideScrollerScene'],
+    [1, 'PromenadeScene'],
   ]);
 
   constructor(scene: Phaser.Scene, enabled: boolean = true) {
@@ -79,7 +77,6 @@ export class SceneSwitcher {
     // Frame calculations
     const keyFrames = {
       one: 51,      // '1' key (row 2, col 18)
-      two: 52,      // '2' key (row 2, col 19)
       esc: 17,      // ESC key (row 1, col 18)
     };
 
@@ -87,11 +84,8 @@ export class SceneSwitcher {
     // Menu button: MainMenuScene (rightmost)
     this.createSceneButton(startX, startY, keyFrames.esc, 'MainMenuScene', 'ESC: Menu');
 
-    // Button 2: SideScrollerScene
-    this.createSceneButton(startX - buttonSpacing, startY, keyFrames.two, 'SideScrollerScene', '2: Side-Scroller');
-
-    // Button 1: GamePlayScene (leftmost)
-    this.createSceneButton(startX - buttonSpacing * 2, startY, keyFrames.one, 'GamePlayScene', '1: Platformer');
+    // Button 1: PromenadeScene (leftmost)
+    this.createSceneButton(startX - buttonSpacing, startY, keyFrames.one, 'PromenadeScene', '1: Promenade');
   }
 
   private createSceneButton(x: number, y: number, frame: number, sceneName: string, _label: string): void {
