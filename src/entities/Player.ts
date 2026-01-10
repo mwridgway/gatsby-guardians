@@ -43,8 +43,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.body) {
       const body = this.body as Phaser.Physics.Arcade.Body;
       body.setCollideWorldBounds(true);
-      body.setSize(14, 16); // Slightly smaller hitbox
-      body.setOffset(1, 0);
+      
+      // Define hitbox size (feet area)
+      const hitWidth = 14;
+      const hitHeight = 34; 
+      
+      body.setSize(hitWidth, hitHeight);
+      
+      // Calculate offset to center horizontally and align to bottom (feet)
+      // The sprite has 8 pixels of space at the bottom, so we offset by -8
+      const offsetX = (this.width - hitWidth) / 2;
+      const offsetY = this.height - hitHeight - 7;
+      
+      body.setOffset(offsetX, offsetY);
     }
 
     // Set origin for proper rotation

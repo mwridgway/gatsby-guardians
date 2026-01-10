@@ -25,6 +25,11 @@ export class MainMenuScene extends Phaser.Scene {
     // IMPORTANT: Set the scene so InputMapper listens to THIS scene's keyboard
     this.inputMapper.setScene(this);
 
+    // Add fullscreen button
+    if (this.fullscreenManager) {
+      this.fullscreenManager.createFullscreenButton(this);
+    }
+
     // Create title
     this.titleText = this.add.text(BASE_WIDTH / 2, BASE_HEIGHT / 3, 'GATSBY GUARDIANS', {
       fontFamily: 'Arial Black',

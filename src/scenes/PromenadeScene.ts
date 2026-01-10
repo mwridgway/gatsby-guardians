@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { BASE_HEIGHT, ENABLE_SCENE_SWITCHER } from '../game/constants';
 import { InputMapper } from '../systems/InputMapper';
-import { AdManager } from '../systems/AdManager';
 import { Player } from '../entities/Player';
 import { SceneSwitcher } from '../systems/SceneSwitcher';
 import { WeaponManager } from '../systems/WeaponManager';
 import { StatusEffectManager } from '../systems/StatusEffectManager';
+import { FullscreenManager } from '../systems/FullscreenManager';
 
 /**
  * PromenadeScene - Sea Point Promenade, Cape Town inspired oceanfront level
@@ -14,9 +14,9 @@ import { StatusEffectManager } from '../systems/StatusEffectManager';
  */
 export class PromenadeScene extends Phaser.Scene {
   private inputMapper!: InputMapper;
-  private adManager!: AdManager;
   private weaponManager!: WeaponManager;
   private statusEffectManager!: StatusEffectManager;
+  private fullscreenManager!: FullscreenManager;
   private player!: Player;
   private platformsLayer!: Phaser.Tilemaps.TilemapLayer;
 
@@ -24,8 +24,8 @@ export class PromenadeScene extends Phaser.Scene {
   private map!: Phaser.Tilemaps.Tilemap;
   private tileset!: Phaser.Tilemaps.Tileset;
 
-  // Spawn point from map
-  private spawnPoint: { x: number; y: number } = { x: 36, y: 208 };
+  // Spawn point from map (loaded from JSON)
+  private spawnPoint: { x: number; y: number } | null = null;
 
   // Level dimensions (derived from map)
   private levelWidth: number = 0;
@@ -40,7 +40,7 @@ export class PromenadeScene extends Phaser.Scene {
 
     // Get systems from registry
     this.inputMapper = this.registry.get('inputMapper') as InputMapper;
-    this.adManager = this.registry.get('adManager') as AdManager;
+    this.fullscreenManager = this.registry.get('fullscreenManager') as FullscreenManager;
 
     // Initialize scene-specific systems
     this.weaponManager = new WeaponManager(this);
@@ -51,8 +51,10 @@ export class PromenadeScene extends Phaser.Scene {
     // Set the scene for InputMapper
     this.inputMapper.setScene(this);
 
-    // Notify ad platform that gameplay started
-    this.adManager.gameplayStart();
+    // Add fullscreen button
+    if (this.fullscreenManager) {
+      this.fullscreenManager.createFullscreenButton(this);
+    }
 
     // Load the Tiled map
     this.loadTiledMap();
@@ -82,7 +84,8 @@ export class PromenadeScene extends Phaser.Scene {
     this.levelHeight = this.map.heightInPixels;
 
     // Add the tileset image (name must match tileset name in Tiled JSON)
-    const tileset = this.map.addTilesetImage('EmbeddedPromenade', 'promenade-tileset');
+    // Explicitly pass tile dimensions, margin, and spacing to match the JSON/generated tileset
+    const tileset = this.map.addTilesetImage('EmbeddedPromenade', 'promenade-tileset', 16, 16, 1, 2);
     if (!tileset) {
       console.error('PromenadeScene: Failed to load tileset');
       return;
@@ -91,7 +94,7 @@ export class PromenadeScene extends Phaser.Scene {
 
     // Create tile layers directly by name (from the Tiled JSON)
     // The tilemap has: middleground, word (collision), foreground, and experiment
-    const tileLayerNames = ['middleground', 'word', 'foreground', 'experiment'];
+    const tileLayerNames = ['world', 'middleground', 'foreground'];
 
     for (const layerName of tileLayerNames) {
       try {
@@ -107,12 +110,12 @@ export class PromenadeScene extends Phaser.Scene {
             if (depthProp) layer.setDepth(depthProp.value);
 
             const scrollProp = props.find(p => p.name === 'scrollFactorX');
-            if (scrollProp) layer.setScrollFactor(scrollProp.value, 1);
+            if (scrollProp) layer.setScrollFactor(scrollProp.value, 0);
           }
 
           // Enable tile-based collision on the platforms/world layer
           // 'word' is a typo in the Tiled file for 'world'
-          if (layerName === 'word' || layerName === 'platforms') {
+          if (layerName === 'world' || layerName === 'platforms') {
             this.platformsLayer = layer;
             // Only tiles with 'collides: true' property will be collidable
             layer.setCollisionByProperty({ collides: true });
@@ -147,10 +150,17 @@ export class PromenadeScene extends Phaser.Scene {
       image: string;
       x: number;
       y: number;
+      visible?: boolean;
       repeatx?: boolean;
       properties?: Array<{ name: string; value: number }>;
     }) => {
       if (layerData.type !== 'imagelayer') return;
+
+      // Skip if layer is not visible
+      if (layerData.visible === false) {
+        console.log(`PromenadeScene: Skipping hidden image layer '${layerData.name}'`);
+        return;
+      }
 
       // Get properties
       let depth = 0;
@@ -189,13 +199,13 @@ export class PromenadeScene extends Phaser.Scene {
           textureKey
         );
         tileSprite.setOrigin(0, 0);
-        tileSprite.setScrollFactor(scrollFactorX, 1);
+        tileSprite.setScrollFactor(scrollFactorX, 0);
         tileSprite.setDepth(depth);
         console.log(`PromenadeScene: Created repeating image layer '${layerData.name}' at depth ${depth}`);
       } else {
         const image = this.add.image(layerData.x || 0, layerData.y || 0, textureKey);
         image.setOrigin(0, 0);
-        image.setScrollFactor(scrollFactorX, 1);
+        image.setScrollFactor(scrollFactorX, 0);
         image.setDepth(depth);
         console.log(`PromenadeScene: Created image layer '${layerData.name}' at depth ${depth}`);
       }
@@ -218,7 +228,7 @@ export class PromenadeScene extends Phaser.Scene {
 
       switch (objType) {
         case 'player-spawn':
-          this.spawnPoint = { x: obj.x || 36, y: obj.y || 208 };
+          this.spawnPoint = { x: obj.x || 0, y: obj.y || 0 };
           console.log(`PromenadeScene: Found spawn point at (${this.spawnPoint.x}, ${this.spawnPoint.y})`);
           break;
 
@@ -237,8 +247,14 @@ export class PromenadeScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
+    // Use spawn point from map or default fallback
+    const spawn = this.spawnPoint || { x: 36, y: 208 };
+    if (!this.spawnPoint) {
+      console.warn('PromenadeScene: No spawn point found in map, using default (36, 208)');
+    }
+    
     // Spawn player at the spawn point from the map
-    this.player = new Player(this, this.spawnPoint.x, this.spawnPoint.y, this.inputMapper);
+    this.player = new Player(this, spawn.x, spawn.y, this.inputMapper);
 
     // Set up collision with platforms layer (tile-based collision)
     if (this.platformsLayer) {
@@ -248,7 +264,7 @@ export class PromenadeScene extends Phaser.Scene {
     // Keep player within world bounds
     this.player.setCollideWorldBounds(true);
 
-    console.log(`PromenadeScene: Player spawned at (${this.spawnPoint.x}, ${this.spawnPoint.y})`);
+    console.log(`PromenadeScene: Player spawned at (${spawn.x}, ${spawn.y})`);
   }
 
   update(time: number, delta: number): void {

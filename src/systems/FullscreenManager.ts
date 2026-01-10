@@ -12,11 +12,13 @@ export class FullscreenManager {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.isMobile = 'ontouchstart' in window;
-    this.createFullscreenButton();
     this.setupFullscreenListeners();
   }
 
-  private createFullscreenButton(): void {
+  public createFullscreenButton(targetScene?: Phaser.Scene): void {
+    // Use provided scene or default to the one passed in constructor
+    const sceneToUse = targetScene || this.scene;
+    
     const buttonScale = 2.5;
     const padding = 10;
 
@@ -28,12 +30,13 @@ export class FullscreenManager {
     // Row 4, Col 32: (4-1)*34 + (32-1) = 133
     const fullscreenFrame = 133;
 
-    const button = this.scene.add.sprite(x, y, 'input-prompts', fullscreenFrame);
+    // Create sprite in the target scene
+    const button = sceneToUse.add.sprite(x, y, 'input-prompts', fullscreenFrame);
     button.setScale(buttonScale);
     button.setAlpha(0.75);
     button.setOrigin(0, 0);
-    button.setScrollFactor(0);
-    button.setDepth(9998);
+    button.setScrollFactor(0); // Fix to camera
+    button.setDepth(9998); // Topmost
     button.setInteractive({ useHandCursor: true });
 
     // Hover effect
@@ -57,8 +60,13 @@ export class FullscreenManager {
       button.setScale(2.5);
     });
 
-    this.button = this.scene.add.container(0, 0);
-    this.button.add(button);
+    // Store reference if we want to manage it later (simple implementation for now)
+    // Note: If we create multiple buttons in different scenes, we might want to track them all
+    // or just let the scene destruction handle them.
+    if (sceneToUse === this.scene) {
+        this.button = this.scene.add.container(0, 0);
+        this.button.add(button);
+    }
   }
 
   private setupFullscreenListeners(): void {

@@ -1,4 +1,8 @@
 {
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
     "activeFile": "maps/promenade.tmx",
     "expandedProjectPaths": [
         ".",
@@ -6,7 +10,8 @@
     ],
     "fileStates": {
         "": {
-            "scaleInDock": 2
+            "scaleInDock": 2,
+            "scaleInEditor": 2
         },
         "maps/promenade..room.gmx.tmj": {
             "scale": 0.32013020833333333,
@@ -23,11 +28,11 @@
             "expandedObjectLayers": [
                 7
             ],
-            "scale": 2,
-            "selectedLayer": 2,
+            "scale": 1,
+            "selectedLayer": 5,
             "viewCenter": {
-                "x": 135.5,
-                "y": 243.25
+                "x": 431,
+                "y": 259.5
             }
         },
         "maps/promenade.json#EmbeddedPromenade": {
@@ -38,7 +43,7 @@
         },
         "maps/promenade.tmx": {
             "scale": 1,
-            "selectedLayer": 3,
+            "selectedLayer": 4,
             "viewCenter": {
                 "x": 434,
                 "y": 269.5
@@ -67,10 +72,10 @@
     "project": "TiledProject.tiled-project",
     "property.type": "float",
     "recentFiles": [
+        "maps/promenade.json",
         "maps/promenade.tmx",
         "maps/promenade.tsx",
-        "maps/promenade..room.gmx.tmj",
-        "maps/promenade.json"
+        "maps/promenade..room.gmx.tmj"
     ],
     "tileset.embedInMap": true,
     "tileset.lastUsedFilter": "All Files (*)",
