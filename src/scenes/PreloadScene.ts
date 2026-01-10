@@ -35,15 +35,12 @@ export class PreloadScene extends Phaser.Scene {
       margin: 0,
     });
 
-    // Load Cape Town Promenade parallax background layers
-    this.load.image('parallax-sky', 'assets/parallax-sky-simple.png');
-    this.load.image('parallax-mountains', 'assets/lions-head-mountain-transparent.png');
-    this.load.image('parallax-mid', 'assets/beach-road-buildings-transparent.png');
-    this.load.image('parallax-foreground', 'assets/promenade-railing.png');
+    // Load promenade Tiled map and tileset
+    this.load.tilemapTiledJSON('promenade-map', 'assets/maps/promenade.json');
+    this.load.image('promenade-tileset', 'assets/maps/assets/promenade.png');
 
-    // Load promenade tileset
-    this.load.image('promenade-tileset', 'assets/promenade-tileset.png');
-    this.load.json('promenade-metadata', 'assets/promenade-tileset.json');
+    // Load parallax background for the map's image layer
+    this.load.image('parallax-background', 'assets/maps/assets/parallax_background_layer_6.png');
 
     // Load character sprites
     this.load.image('character-south', 'assets/character-athlone/rotations/south.png');

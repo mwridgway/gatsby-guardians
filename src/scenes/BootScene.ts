@@ -1,8 +1,12 @@
 import Phaser from 'phaser';
+import * as pako from 'pako';
 import { InputMapper } from '../systems/InputMapper';
 import { AudioManager } from '../systems/AudioManager';
 import { AdManager } from '../systems/AdManager';
 import { FullscreenManager } from '../systems/FullscreenManager';
+
+// Expose pako globally for Phaser to use for zlib decompression of Tiled maps
+(window as unknown as { pako: typeof pako }).pako = pako;
 
 /**
  * BootScene - Initialize core systems

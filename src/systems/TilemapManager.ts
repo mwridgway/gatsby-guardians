@@ -1,20 +1,8 @@
 import Phaser from 'phaser';
 
 interface TileData {
-  id: string;
-  name: string;
-  corners: {
-    NE: string;
-    NW: string;
-    SE: string;
-    SW: string;
-  };
-  pattern_4x4: {
-    row_0: number[];
-    row_1: number[];
-    row_2: number[];
-    row_3: number[];
-  };
+  id: number;
+  mask: number;
   bounding_box: {
     x: number;
     y: number;
@@ -50,8 +38,8 @@ export class TilemapManager {
   // Rendered tiles
   private tileSprites: Phaser.GameObjects.Image[] = [];
 
-  // Pattern cache for fast tile lookup
-  private patternCache: Map<string, TileData> = new Map();
+  // Map mask to tile data
+  private maskToTile: Map<number, TileData> = new Map();
 
   constructor(
     scene: Phaser.Scene,
@@ -70,26 +58,18 @@ export class TilemapManager {
     // Initialize empty terrain grid
     this.terrainGrid = Array(gridHeight).fill(0).map(() => Array(gridWidth).fill(0));
 
-    // Build pattern cache
-    this.buildPatternCache();
+    // Build mask cache
+    this.buildMaskCache();
   }
 
   /**
-   * Build a cache mapping patterns to tiles for fast lookup
+   * Build a cache mapping bitmasks to tiles for fast lookup
    */
-  private buildPatternCache(): void {
+  private buildMaskCache(): void {
     this.metadata.tileset_data.tiles.forEach(tile => {
-      const key = this.patternToKey(tile.pattern_4x4);
-      this.patternCache.set(key, tile);
+      this.maskToTile.set(tile.mask, tile);
     });
-    console.log(`TilemapManager: Built pattern cache with ${this.patternCache.size} tiles`);
-  }
-
-  /**
-   * Convert a 4x4 pattern to a cache key
-   */
-  private patternToKey(pattern: { row_0: number[], row_1: number[], row_2: number[], row_3: number[] }): string {
-    return `${pattern.row_0.join(',')}_${pattern.row_1.join(',')}_${pattern.row_2.join(',')}_${pattern.row_3.join(',')}`;
+    console.log(`TilemapManager: Built mask cache with ${this.maskToTile.size} tiles`);
   }
 
   /**
@@ -112,58 +92,22 @@ export class TilemapManager {
   }
 
   /**
-   * Sample 4x4 terrain around a position and create pattern
+   * Calculate 4-neighbor bitmask for autotiling
+   * North=1, West=2, East=4, South=8
    */
-  private sample4x4Pattern(gridX: number, gridY: number): { row_0: number[], row_1: number[], row_2: number[], row_3: number[] } {
-    const pattern = {
-      row_0: [255, 255, 255, 255],
-      row_1: [255, 0, 0, 255],
-      row_2: [255, 0, 0, 255],
-      row_3: [255, 255, 255, 255]
-    };
+  private calculateBitmask(gridX: number, gridY: number): number {
+    let mask = 0;
 
-    // Sample the 2x2 center (the actual tile corners)
-    // NW corner (row_1[1])
-    pattern.row_1[1] = this.getTile(gridX, gridY);
-    // NE corner (row_1[2])
-    pattern.row_1[2] = this.getTile(gridX + 1, gridY);
-    // SW corner (row_2[1])
-    pattern.row_2[1] = this.getTile(gridX, gridY + 1);
-    // SE corner (row_2[2])
-    pattern.row_2[2] = this.getTile(gridX + 1, gridY + 1);
+    // North
+    if (this.getTile(gridX, gridY - 1) === 1) mask |= 1;
+    // West
+    if (this.getTile(gridX - 1, gridY) === 1) mask |= 2;
+    // East
+    if (this.getTile(gridX + 1, gridY) === 1) mask |= 4;
+    // South
+    if (this.getTile(gridX, gridY + 1) === 1) mask |= 8;
 
-    return pattern;
-  }
-
-  /**
-   * Match a sampled pattern against tile patterns with wildcard support
-   */
-  private matchPattern(sampled: { row_0: number[], row_1: number[], row_2: number[], row_3: number[] }): TileData | null {
-    for (const tile of this.metadata.tileset_data.tiles) {
-      const tilePattern = tile.pattern_4x4;
-      let matches = true;
-
-      // Check each position
-      for (let row = 0; row < 4; row++) {
-        const rowKey = `row_${row}` as 'row_0' | 'row_1' | 'row_2' | 'row_3';
-        for (let col = 0; col < 4; col++) {
-          const tileValue = tilePattern[rowKey][col];
-          const sampledValue = sampled[rowKey][col];
-
-          // Wildcard (255) matches anything
-          if (tileValue !== 255 && tileValue !== sampledValue) {
-            matches = false;
-            break;
-          }
-        }
-        if (!matches) break;
-      }
-
-      if (matches) {
-        return tile;
-      }
-    }
-    return null;
+    return mask;
   }
 
   /**
@@ -190,23 +134,21 @@ export class TilemapManager {
 
         // Only render if there's terrain here
         if (terrain === 1) {
-          const tile = this.selectTileForPosition(gridX, gridY);
+          const mask = this.calculateBitmask(gridX, gridY);
+          const tile = this.maskToTile.get(mask);
+          
           if (tile) {
             this.renderTile(gridX, gridY, tile);
+          } else {
+            // Fallback to center block (all neighbors) if mask not found
+            const fallback = this.maskToTile.get(15);
+            if (fallback) this.renderTile(gridX, gridY, fallback);
           }
         }
       }
     }
 
     console.log(`TilemapManager: Rendered ${this.tileSprites.length} tiles`);
-  }
-
-  /**
-   * Select the appropriate tile for a grid position based on neighbors
-   */
-  private selectTileForPosition(gridX: number, gridY: number): TileData | null {
-    const pattern = this.sample4x4Pattern(gridX, gridY);
-    return this.matchPattern(pattern);
   }
 
   /**

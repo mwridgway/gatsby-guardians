@@ -1,16 +1,16 @@
 import Phaser from 'phaser';
-import { BASE_WIDTH, BASE_HEIGHT, TILE_SIZE, ENABLE_SCENE_SWITCHER } from '../game/constants';
+import { BASE_HEIGHT, ENABLE_SCENE_SWITCHER } from '../game/constants';
 import { InputMapper } from '../systems/InputMapper';
 import { AdManager } from '../systems/AdManager';
 import { Player } from '../entities/Player';
 import { SceneSwitcher } from '../systems/SceneSwitcher';
 import { WeaponManager } from '../systems/WeaponManager';
 import { StatusEffectManager } from '../systems/StatusEffectManager';
-import { TilemapManager } from '../systems/TilemapManager';
 
 /**
  * PromenadeScene - Sea Point Promenade, Cape Town inspired oceanfront level
  * Features the famous Cape Town coastal walkway with ocean views
+ * Now loaded from Tiled map: public/assets/maps/promenade.json
  */
 export class PromenadeScene extends Phaser.Scene {
   private inputMapper!: InputMapper;
@@ -18,11 +18,18 @@ export class PromenadeScene extends Phaser.Scene {
   private weaponManager!: WeaponManager;
   private statusEffectManager!: StatusEffectManager;
   private player!: Player;
-  private platforms!: Phaser.Physics.Arcade.StaticGroup;
-  private tilemapManager!: TilemapManager;
+  private platformsLayer!: Phaser.Tilemaps.TilemapLayer;
 
-  // Level configuration
-  private readonly LEVEL_WIDTH = BASE_WIDTH * 3; // 3 screens wide
+  // Tiled map
+  private map!: Phaser.Tilemaps.Tilemap;
+  private tileset!: Phaser.Tilemaps.Tileset;
+
+  // Spawn point from map
+  private spawnPoint: { x: number; y: number } = { x: 36, y: 208 };
+
+  // Level dimensions (derived from map)
+  private levelWidth: number = 0;
+  private levelHeight: number = 0;
 
   constructor() {
     super({ key: 'PromenadeScene' });
@@ -47,164 +54,185 @@ export class PromenadeScene extends Phaser.Scene {
     // Notify ad platform that gameplay started
     this.adManager.gameplayStart();
 
-    // Create parallax background layers (ocean theme)
-    this.createParallaxLayers();
+    // Load the Tiled map
+    this.loadTiledMap();
 
-    // Create promenade platforms
-    this.createPlatforms();
-
-    // Create player
+    // Create player at spawn point
     this.createPlayer();
 
     // Set up camera to follow player with bounds
-    this.cameras.main.setBounds(0, 0, this.LEVEL_WIDTH, BASE_HEIGHT);
+    this.cameras.main.setBounds(0, 0, this.levelWidth, this.levelHeight);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
 
     // Set world bounds for physics
-    this.physics.world.setBounds(0, 0, this.LEVEL_WIDTH, BASE_HEIGHT);
+    this.physics.world.setBounds(0, 0, this.levelWidth, this.levelHeight);
 
     // Add scene switcher for development
     new SceneSwitcher(this, ENABLE_SCENE_SWITCHER);
 
-    console.log('PromenadeScene: Level ready - Welcome to Sea Point!');
+    console.log(`PromenadeScene: Level ready - ${this.levelWidth}x${this.levelHeight}px`);
   }
 
-  private createParallaxLayers(): void {
-    // Create Cape Town parallax layers with tiling
+  private loadTiledMap(): void {
+    // Create the tilemap from the loaded JSON
+    this.map = this.make.tilemap({ key: 'promenade-map' });
 
-    // Layer 0: Golden hour Cape Town sky (tiled, slowest scroll)
-    const skyTile = this.add.tileSprite(0, 0, this.LEVEL_WIDTH, BASE_HEIGHT, 'parallax-sky');
-    skyTile.setOrigin(0, 0);
-    skyTile.setScrollFactor(0);
-    skyTile.setDepth(-4);
+    // Store level dimensions
+    this.levelWidth = this.map.widthInPixels;
+    this.levelHeight = this.map.heightInPixels;
 
-    // Layer 1: Lion's Head mountain silhouette
-    const mountainTile = this.add.tileSprite(0, BASE_HEIGHT - 250, this.LEVEL_WIDTH, 250, 'parallax-mountains');
-    mountainTile.setOrigin(0, 0);
-    mountainTile.setScrollFactor(0.2);
-    mountainTile.setDepth(-3);
-    mountainTile.setAlpha(1.0); // Ensure full opacity
+    // Add the tileset image (name must match tileset name in Tiled JSON)
+    const tileset = this.map.addTilesetImage('EmbeddedPromenade', 'promenade-tileset');
+    if (!tileset) {
+      console.error('PromenadeScene: Failed to load tileset');
+      return;
+    }
+    this.tileset = tileset;
 
-    // Layer 2: Beach Road buildings
-    const buildingsTile = this.add.tileSprite(0, BASE_HEIGHT - 150, this.LEVEL_WIDTH, 150, 'parallax-mid');
-    buildingsTile.setOrigin(0, 0);
-    buildingsTile.setScrollFactor(0.4);
-    buildingsTile.setDepth(-2);
+    // Create tile layers directly by name (from the Tiled JSON)
+    // The tilemap has: middleground, platforms, and foreground as tilelayers
+    const tileLayerNames = ['middleground', 'platforms', 'foreground'];
 
-    // Layer 3: Promenade railing (foreground)
-    const railingTile = this.add.tileSprite(0, BASE_HEIGHT - 100, this.LEVEL_WIDTH, 100, 'parallax-foreground');
-    railingTile.setOrigin(0, 0);
-    railingTile.setScrollFactor(0.6);
-    railingTile.setDepth(-1);
-  }
+    for (const layerName of tileLayerNames) {
+      try {
+        const layer = this.map.createLayer(layerName, this.tileset);
+        if (layer) {
+          console.log(`PromenadeScene: Created tile layer '${layerName}'`);
 
-  private createPlatforms(): void {
-    // Load tileset metadata
-    const metadata = this.cache.json.get('promenade-metadata');
+          // Apply custom properties from the layer
+          const layerData = this.map.getLayer(layerName);
+          if (layerData?.properties) {
+            const props = layerData.properties as Array<{ name: string; value: number }>;
+            const depthProp = props.find(p => p.name === 'depth');
+            if (depthProp) layer.setDepth(depthProp.value);
 
-    // Calculate grid dimensions
-    const gridWidth = Math.ceil(this.LEVEL_WIDTH / TILE_SIZE);
-    const gridHeight = Math.ceil(BASE_HEIGHT / TILE_SIZE);
+            const scrollProp = props.find(p => p.name === 'scrollFactorX');
+            if (scrollProp) layer.setScrollFactor(scrollProp.value, 1);
+          }
 
-    // Create tilemap manager
-    this.tilemapManager = new TilemapManager(
-      this,
-      'promenade-tileset',
-      metadata,
-      gridWidth,
-      gridHeight
-    );
-
-    // Convert pixel coordinates to grid coordinates for promenade ground
-    const promenadeGridY = Math.floor((BASE_HEIGHT - TILE_SIZE) / TILE_SIZE);
-
-    // Create promenade walkway along the entire level (like the actual Sea Point Promenade)
-    for (let gridX = 0; gridX < gridWidth; gridX++) {
-      this.tilemapManager.setTile(gridX, promenadeGridY, 1);
+          // Enable tile-based collision on the platforms layer
+          if (layerName === 'platforms') {
+            this.platformsLayer = layer;
+            // Only tiles with 'collides: true' property will be collidable
+            layer.setCollisionByProperty({ collides: true });
+            console.log('PromenadeScene: Enabled tile collision on platforms layer (collides property)');
+          }
+        } else {
+          console.warn(`PromenadeScene: Failed to create layer '${layerName}'`);
+        }
+      } catch (error) {
+        console.error(`PromenadeScene: Error creating layer '${layerName}':`, error);
+      }
     }
 
-    // Add some elevated viewing platforms along the promenade
-    // Section 1: Starting viewpoint
-    this.createTilemapPlatform(200, BASE_HEIGHT - 80, 8);
+    console.log(`PromenadeScene: Processed ${tileLayerNames.length} tile layers`);
 
-    // Section 2: Mid promenade seating area
-    this.createTilemapPlatform(500, BASE_HEIGHT - 64, 12);
-    this.createTilemapPlatform(520, BASE_HEIGHT - 96, 8);
+    // Process image layers
+    this.createImageLayers();
 
-    // Section 3: Ocean viewing deck
-    this.createTilemapPlatform(900, BASE_HEIGHT - 80, 10);
-    this.createTilemapPlatform(920, BASE_HEIGHT - 112, 6);
-
-    // Section 4: Exercise area platforms
-    this.createTilemapPlatform(1300, BASE_HEIGHT - 64, 6);
-    this.createTilemapPlatform(1400, BASE_HEIGHT - 96, 4);
-
-    // Section 5: Another viewpoint
-    this.createTilemapPlatform(1700, BASE_HEIGHT - 80, 10);
-
-    // Section 6: Long stretch with occasional raised sections
-    this.createTilemapPlatform(2100, BASE_HEIGHT - 64, 8);
-    this.createTilemapPlatform(2400, BASE_HEIGHT - 80, 12);
-    this.createTilemapPlatform(2700, BASE_HEIGHT - 64, 6);
-
-    // Section 7: End of promenade with multiple levels
-    this.createTilemapPlatform(3000, BASE_HEIGHT - 64, 8);
-    this.createTilemapPlatform(3020, BASE_HEIGHT - 96, 6);
-    this.createTilemapPlatform(3040, BASE_HEIGHT - 128, 4);
-
-    // Render the tilemap
-    this.tilemapManager.render();
-
-    // Create physics bodies for collision
-    this.platforms = this.tilemapManager.createPhysicsBodies(this.physics);
-
-    // Add promenade furniture and decorations
-    this.addPromenadeObjects();
+    // Process object layer for spawn points only (collision handled by tiles)
+    this.processObjectLayer();
   }
 
-  private createTilemapPlatform(x: number, y: number, width: number): void {
-    const gridX = Math.floor(x / TILE_SIZE);
-    const gridY = Math.floor(y / TILE_SIZE);
-    this.tilemapManager.createPlatform(gridX, gridY, width);
+  private createImageLayers(): void {
+    // Get image layers from map data
+    const tilemapCache = this.cache.tilemap.get('promenade-map');
+    const mapData = tilemapCache?.data;
+    if (!mapData?.layers) return;
+
+    mapData.layers.forEach((layerData: {
+      type: string;
+      name: string;
+      image: string;
+      x: number;
+      y: number;
+      repeatx?: boolean;
+      properties?: Array<{ name: string; value: number }>;
+    }) => {
+      if (layerData.type !== 'imagelayer') return;
+
+      // Get properties
+      let depth = 0;
+      let scrollFactorX = 1;
+
+      if (layerData.properties) {
+        const depthProp = layerData.properties.find(p => p.name === 'depth');
+        if (depthProp) depth = depthProp.value;
+
+        const scrollProp = layerData.properties.find(p => p.name === 'scrollFactorX');
+        if (scrollProp) scrollFactorX = scrollProp.value;
+      }
+
+      // Create image or tileSprite based on repeat setting
+      if (layerData.repeatx) {
+        const tileSprite = this.add.tileSprite(
+          0,
+          layerData.y || 0,
+          this.levelWidth,
+          BASE_HEIGHT,
+          'parallax-background'
+        );
+        tileSprite.setOrigin(0, 0);
+        tileSprite.setScrollFactor(scrollFactorX, 1);
+        tileSprite.setDepth(depth);
+        console.log(`PromenadeScene: Created repeating image layer '${layerData.name}' at depth ${depth}`);
+      } else {
+        const image = this.add.image(layerData.x || 0, layerData.y || 0, 'parallax-background');
+        image.setOrigin(0, 0);
+        image.setScrollFactor(scrollFactorX, 1);
+        image.setDepth(depth);
+        console.log(`PromenadeScene: Created image layer '${layerData.name}' at depth ${depth}`);
+      }
+    });
   }
 
-  private addPromenadeObjects(): void {
-    // Add street lamps along the promenade
-    this.addPlatformObject('street-lamp', 300, BASE_HEIGHT - TILE_SIZE);
-    this.addPlatformObject('street-lamp', 700, BASE_HEIGHT - TILE_SIZE);
-    this.addPlatformObject('street-lamp', 1100, BASE_HEIGHT - TILE_SIZE);
-    this.addPlatformObject('street-lamp', 1500, BASE_HEIGHT - TILE_SIZE);
+  private processObjectLayer(): void {
+    const objectLayer = this.map.getObjectLayer('objects');
+    if (!objectLayer) {
+      console.warn('PromenadeScene: No objects layer found');
+      return;
+    }
 
-    // Add exercise equipment (Sea Point outdoor gym culture)
-    this.addPlatformObject('gym-equipment', 450, BASE_HEIGHT - TILE_SIZE);
-    this.addPlatformObject('gym-equipment', 1250, BASE_HEIGHT - TILE_SIZE);
+    objectLayer.objects.forEach(obj => {
+      // Get the type from custom properties
+      const typeProp = obj.properties?.find(
+        (p: { name: string; value: string }) => p.name === 'type'
+      );
+      const objType = typeProp?.value || '';
 
-    // Add trash bins (corporate sterilised look)
-    this.addPlatformObject('trash-bin', 550, BASE_HEIGHT - TILE_SIZE);
-    this.addPlatformObject('trash-bin', 950, BASE_HEIGHT - TILE_SIZE);
-    this.addPlatformObject('trash-bin', 1350, BASE_HEIGHT - TILE_SIZE);
-    this.addPlatformObject('trash-bin', 1700, BASE_HEIGHT - TILE_SIZE);
-  }
+      switch (objType) {
+        case 'player-spawn':
+          this.spawnPoint = { x: obj.x || 36, y: obj.y || 208 };
+          console.log(`PromenadeScene: Found spawn point at (${this.spawnPoint.x}, ${this.spawnPoint.y})`);
+          break;
 
-  private addPlatformObject(texture: string, x: number, y: number): void {
-    const sprite = this.physics.add.staticImage(x, y, texture);
-    sprite.setOrigin(0, 1); // Bottom-left origin for easier placement
-    sprite.setScale(1); // Use original size
-    this.platforms.add(sprite);
+        case 'dustbin':
+          // Decorative object - could add sprite here later
+          console.log(`PromenadeScene: Found dustbin at (${obj.x}, ${obj.y})`);
+          break;
+
+        // ground/platform collision is now handled by tile-based collision
+        default:
+          if (objType && objType !== 'ground' && objType !== 'platform') {
+            console.log(`PromenadeScene: Object '${obj.name}' type='${objType}' at (${obj.x}, ${obj.y})`);
+          }
+      }
+    });
   }
 
   private createPlayer(): void {
-    // Spawn player at the start of the promenade
-    const spawnX = BASE_WIDTH / 4;
-    const spawnY = BASE_HEIGHT / 2;
+    // Spawn player at the spawn point from the map
+    this.player = new Player(this, this.spawnPoint.x, this.spawnPoint.y, this.inputMapper);
 
-    this.player = new Player(this, spawnX, spawnY, this.inputMapper);
-
-    // Set up collision with platforms
-    this.physics.add.collider(this.player, this.platforms);
+    // Set up collision with platforms layer (tile-based collision)
+    if (this.platformsLayer) {
+      this.physics.add.collider(this.player, this.platformsLayer);
+    }
 
     // Keep player within world bounds
     this.player.setCollideWorldBounds(true);
+
+    console.log(`PromenadeScene: Player spawned at (${this.spawnPoint.x}, ${this.spawnPoint.y})`);
   }
 
   update(time: number, delta: number): void {
