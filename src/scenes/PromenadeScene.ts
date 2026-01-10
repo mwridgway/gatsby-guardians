@@ -90,8 +90,8 @@ export class PromenadeScene extends Phaser.Scene {
     this.tileset = tileset;
 
     // Create tile layers directly by name (from the Tiled JSON)
-    // The tilemap has: middleground, platforms, and foreground as tilelayers
-    const tileLayerNames = ['middleground', 'platforms', 'foreground'];
+    // The tilemap has: middleground, word (collision), foreground, and experiment
+    const tileLayerNames = ['middleground', 'word', 'foreground', 'experiment'];
 
     for (const layerName of tileLayerNames) {
       try {
@@ -110,22 +110,23 @@ export class PromenadeScene extends Phaser.Scene {
             if (scrollProp) layer.setScrollFactor(scrollProp.value, 1);
           }
 
-          // Enable tile-based collision on the platforms layer
-          if (layerName === 'platforms') {
+          // Enable tile-based collision on the platforms/world layer
+          // 'word' is a typo in the Tiled file for 'world'
+          if (layerName === 'word' || layerName === 'platforms') {
             this.platformsLayer = layer;
             // Only tiles with 'collides: true' property will be collidable
             layer.setCollisionByProperty({ collides: true });
-            console.log('PromenadeScene: Enabled tile collision on platforms layer (collides property)');
+            console.log(`PromenadeScene: Enabled tile collision on '${layerName}' layer (collides property)`);
           }
         } else {
-          console.warn(`PromenadeScene: Failed to create layer '${layerName}'`);
+          console.log(`PromenadeScene: Layer '${layerName}' not found in map`);
         }
       } catch (error) {
         console.error(`PromenadeScene: Error creating layer '${layerName}':`, error);
       }
     }
 
-    console.log(`PromenadeScene: Processed ${tileLayerNames.length} tile layers`);
+    console.log(`PromenadeScene: Processed tile layers`);
 
     // Process image layers
     this.createImageLayers();
@@ -163,6 +164,21 @@ export class PromenadeScene extends Phaser.Scene {
         if (scrollProp) scrollFactorX = scrollProp.value;
       }
 
+      // Determine texture key from image path
+      // e.g., "assets/mountains.png" -> "mountains"
+      let textureKey = 'parallax-background'; // Default fallback
+      if (layerData.image) {
+        // Extract filename without path and extension
+        const parts = layerData.image.split(/[/\\]/); // split by / or \
+        const filename = parts[parts.length - 1];
+        const nameParts = filename.split('.');
+        if (nameParts.length > 0) {
+          textureKey = nameParts[0];
+        }
+      }
+
+      console.log(`PromenadeScene: Processing image layer '${layerData.name}' with texture '${textureKey}'`);
+
       // Create image or tileSprite based on repeat setting
       if (layerData.repeatx) {
         const tileSprite = this.add.tileSprite(
@@ -170,14 +186,14 @@ export class PromenadeScene extends Phaser.Scene {
           layerData.y || 0,
           this.levelWidth,
           BASE_HEIGHT,
-          'parallax-background'
+          textureKey
         );
         tileSprite.setOrigin(0, 0);
         tileSprite.setScrollFactor(scrollFactorX, 1);
         tileSprite.setDepth(depth);
         console.log(`PromenadeScene: Created repeating image layer '${layerData.name}' at depth ${depth}`);
       } else {
-        const image = this.add.image(layerData.x || 0, layerData.y || 0, 'parallax-background');
+        const image = this.add.image(layerData.x || 0, layerData.y || 0, textureKey);
         image.setOrigin(0, 0);
         image.setScrollFactor(scrollFactorX, 1);
         image.setDepth(depth);

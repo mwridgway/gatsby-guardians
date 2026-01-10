@@ -39,7 +39,12 @@ export class PreloadScene extends Phaser.Scene {
     this.load.tilemapTiledJSON('promenade-map', 'assets/maps/promenade.json');
     this.load.image('promenade-tileset', 'assets/maps/assets/promenade.png');
 
-    // Load parallax background for the map's image layer
+    // Load map image layers
+    this.load.image('mountains', 'assets/maps/assets/mountains.png');
+    this.load.image('buildings', 'assets/maps/assets/buildings.png');
+    this.load.image('playable-area', 'assets/maps/assets/playable-area.png');
+
+    // Load parallax background (legacy/fallback)
     this.load.image('parallax-background', 'assets/maps/assets/parallax_background_layer_6.png');
 
     // Load character sprites
