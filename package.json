@@ -20,8 +20,8 @@
     "@types/pako": "^2.0.4",
     "gh-pages": "^6.3.0",
     "typescript": "^5.3.3",
-    "vite": "^5.0.8",
-    "vite-plugin-pwa": "^0.17.4",
+    "vite": "^7.3.0",
+    "vite-plugin-pwa": "^1.2.0",
     "workbox-build": "^7.0.0",
     "workbox-window": "^7.0.0"
   }
